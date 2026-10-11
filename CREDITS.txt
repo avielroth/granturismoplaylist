@@ -1,0 +1,160 @@
+MY RACING PLAYLIST - credits
+
+CARS
+All models from Sketchfab. Changes: turned, scaled to 4.4 m and centred, textures
+made smaller (1024 px, WebP) for the preview; rendered in a studio scene.
+
+- "1997 Mercedes CLK GTR GT1" by Dave Love SketchFab (https://sketchfab.com/Tyler_Dave)
+  https://sketchfab.com/3d-models/1997-mercedes-clk-gtr-gt1-a5f9b0310baa4acda6a36c71f2960f8c
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+- "1997 Toyota Castrol TOM'S Supra" by Dave Bored SketchFab (https://sketchfab.com/Tyler_Dave)
+  https://sketchfab.com/3d-models/1997-toyota-castrol-toms-supra-65596d3e409b4741a8c93349e8efc37b
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+- "1999 Toyota TS020 (GT-One)" by Dave Bored SketchFab (https://sketchfab.com/Tyler_Dave)
+  https://sketchfab.com/3d-models/1999-toyota-ts020-gt-one-00039a68100445cd9912dd7be023e780
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+- "2006 | Ford GT LM Spec ll Test Car" by kevin (ケビン) (https://sketchfab.com/sohyalebret)
+  https://sketchfab.com/3d-models/2006-ford-gt-lm-spec-ll-test-car-dd6c3effdb1e43ecadace447ccbda68d
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Also: collision and shadow helper meshes removed
+
+- "Mazda 787B | www.vecarz.com" by vecarz (https://sketchfab.com/heynic)
+  https://sketchfab.com/3d-models/mazda-787b-wwwvecarzcom-bdcfed4f59f54afebc817960312612c6
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+- "Mitsubishi Lancer Evolution VII" by J5nnym1r™ (https://sketchfab.com/Wekfest23)
+  https://sketchfab.com/3d-models/mitsubishi-lancer-evolution-vii-b2bdc6dc54c245af8ec9118bd4ef82bc
+  Licence: CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+  Also: polygon count reduced to 20 %
+
+- "Nissan Skyline (R32) GT-R" by Lexyc16 (https://sketchfab.com/Lexyc16)
+  https://sketchfab.com/3d-models/nissan-skyline-r32-gt-r-8810e677eca543a6b840cf67dd064aa4
+  Licence: CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+
+- "Nissan Skyline R34 GTR 2002 | www.vecarz.com" by vecarz (https://sketchfab.com/heynic)
+  https://sketchfab.com/3d-models/nissan-skyline-r34-gtr-2002-wwwvecarzcom-03907515f2e24316b6fefa3ebdd4dd0a
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+MUSIC (not included: the player plays your own copies, see README.md)
+104 tracks from Gran Turismo 5 (Original Game Soundtrack) and Gran Turismo 6.
+
+GT5:
+  Like a Bird - KEMMEI
+  my favorite wings - Maki Mannami
+  Cubic Luster - Yuto Takei
+  The Trip - MAKOTO
+  Liberty - KEMMEI
+  Smoker's Lament - Ryo Sonoda
+  Passion - Yuki Oike
+  Dark Line - Satoshi Bando
+  Slow On The Uptake - Satoshi Bando
+  8va Curves - Yuto Takei
+  Night birds - Yudai Sato
+  radiotire - YO-C+B.U.S
+  7 days reminiscence - Taku Yabuki
+  WINDS - Norihito Sumitomo
+  Cecile - Seigen Tokuzawa
+  Holiday - Taroma Koshida
+  HOT STUFF - Norihito Sumitomo
+  Horizons in May - Keiji Inai
+  Madeleine - Daisuke Kawai
+  City Circuit - Daisuke Kawai
+  SOLITUDE - Norihito Sumitomo
+  Beautiful Area - Akihisa Yamaguchi
+  The First Person - Akihisa Yamaguchi
+  Sunday - Taroma Koshida
+  In Transit - Keiji Inai
+  Apollo - Taroma Koshida
+  SIDE OF YOU - Norihito Sumitomo
+  memorabilia - Taku Yabuki
+
+GT6:
+  Casino Drive - KEMMEI
+  Mirage - KEMMEI
+  Dream World - KEMMEI
+  Xth Avenue - Yuto Takei
+  Exponential TimeLine - Yuto Takei
+  Calm Calm - Tyme.
+  A slowly day - Tyme.
+  Believe - MAKOTO
+  After The Rain - MAKOTO
+  Journey To The One - MAKOTO
+  Boogie Back - MAKOTO
+  Spin your own wheels - Maki Mannami
+  The hat flew away by wind - annayamada
+  Lotus in dam - Akimasa Yamada (prismedia)
+  4 CHORDS - annayamada
+  Let me see your mind - Tyme.
+  Mesmerism - Satoshi Bando
+  Afterglow - Satoshi Bando
+  Smooth Talking - Satoshi Bando
+  Get on!!! - Yudai Satoh
+  Gently,The Moon Always Watches You - Yudai Satoh
+  The power of GT - Yudai Satoh
+  Globe - Yuki Oike
+  Wind - Yuki Oike
+  Marshland - KEMMEI
+  Blue Moon - KEMMEI
+  Prunus in Guanhua - Akimasa Yamada (omega f2;k)
+  Night Observer - Yusuke Asano (asana)
+  Flash - Fencer
+  Vis - mergrim
+  Enter the Rainbow Gate - Maki Mannami
+  Cone Pone Tone - FilFla
+  Bevel Gearing - Yuto Takei
+  Reynolds & Moody - Yuto Takei
+  Another Planet - Tyme.
+  Lunar Mare - Yusuke Yamamoto (channel U)
+  ALONY - Yuki Oike
+  White Out - Yuki Oike
+  Age Of Aquarius - Yuki Oike
+  Glamorous Lips - KEMMEI
+  Juicy Funk Roots - KEMMEI
+  Electric Sky - KEMMEI
+  Whispering Wind - Keiji Inai
+  Easy Drive - Keiji Inai
+  Sunset Breeze - Keiji Inai
+  Quick Slick - MAKOTO
+  Rising - MAKOTO
+  New Beginning - MAKOTO
+  Red - Yuki Oike
+  Gurney's Eagle - Naoki”naotyu-”Chiba
+  Keep The Faith - Shinji Akita
+  Drawing - Ryota Asai
+  Sweet Coffee - Shinji Akita
+  The place for us - Shinji Akita
+  Days with you - Shinji Akita
+  Beside you - Shinji Akita
+  In next second - Shinji Akita
+  Fort Greene Bossa - ytbunit
+  Club Curacao - ytbunit
+  Step in The Night Away - ytbunit
+  Brooklyn Bridge - Daisuke Kawai
+  Express Way - Daisuke Kawai
+  Amber Moment - Daisuke Kawai
+  Slow Life With Sunshine - Yu Manabe
+  Time To Rest - Yu Manabe
+  Dirty Cat Blues - Yu Manabe
+  Mr. Svensson's Coffeebreak in Heaven - Taku Yabuki
+  Nostalgic Rain - Taku Yabuki
+  Serenade for the Travelers - Taku Yabuki
+  Take A Break - Isamu Ohira
+  Be At Home - Isamu Ohira
+  From The East to The West - Isamu Ohira
+  Don’t Kick Yourself - Isamu Ohira
+  Power Speed - Isamu Ohira
+  Shop 1 - Yuki Oike
+  Shop 2 - Susumu Akizuki
+
+This is a personal, non-commercial project. It is not affiliated with or endorsed by
+Sony Interactive Entertainment or Polyphony Digital. Car names and sponsor marks belong to
+their owners.
+
+FONT
+TeX Gyre Heros by GUST e-foundry, GUST Font Licence (https://www.gust.org.pl/projects/e-foundry/tex-gyre)
+
+SOFTWARE
+three.js r170, MIT licence (lib/LICENSE)

@@ -1,0 +1,8 @@
+# The songs never go in this repo (copyrighted soundtrack rips): the site plays the visitor's own files.
+music/
+*.mp3
+*.m4a
+*.flac
+*.wav
+*.ogg
+*.ac3

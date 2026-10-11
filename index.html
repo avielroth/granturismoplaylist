@@ -1,0 +1,968 @@
+<meta charset="utf-8">
+<title>GT Music Player</title>
+<style>
+/* Layout: a 4:3 TV frame (768×576 square-pixel PAL, the disc's own grid) centred on black, holding the
+   3D studio and the garage-style player UI. A small remote sits beside or below the frame. */
+
+/* GT7's UI type is Helvetica + Helvetica Condensed. TeX Gyre Heros is a free Helvetica clone (GUST Font Licence,
+   from CTAN), regular and bold only: weights up to 500 use regular, 600+ bold. */
+@font-face { font-family: "GT Helvetica"; src: url(fonts/texgyreheros-regular.otf) format("opentype"); font-weight: 100 500; }
+@font-face { font-family: "GT Helvetica"; src: url(fonts/texgyreheros-bold.otf) format("opentype"); font-weight: 600 900; }
+@font-face { font-family: "GT Helvetica Condensed"; src: url(fonts/texgyreheroscn-regular.otf) format("opentype"); font-weight: 100 500; }
+@font-face { font-family: "GT Helvetica Condensed"; src: url(fonts/texgyreheroscn-bold.otf) format("opentype"); font-weight: 600 900; }
+:root {
+  color-scheme: dark;
+  --text: #f2f2f2;
+  --label: #b2b2b2;
+  --dim: #8f8f8f;
+  --rule: rgba(112, 110, 112, 0.7);   /* 2 px rules: 1 px lines flicker on an interlaced tube */
+  --ok: #3daa6f;                      /* "Excellent" green, also the on-state of Shuffle and Repeat */
+  --level: #e3197e;                   /* collector level ring */
+  --remote: #16181c;
+  --font: "GT Helvetica", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-cond: "GT Helvetica Condensed", "Helvetica Neue Condensed", "Arial Narrow", sans-serif;   /* car names, PP pill, makes */
+}
+.narrow { font-family: var(--font-cond); }
+html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
+[hidden] { display: none !important; }
+#stage { position: fixed; display: block; }
+.frame { position: fixed; left: 0; top: 0; width: 768px; height: 576px; transform-origin: 0 0; overflow: hidden;
+         font-family: var(--font); color: var(--text); line-height: 1; user-select: none; -webkit-font-smoothing: antialiased; }
+.a { position: absolute; margin: 0; white-space: nowrap; }
+.c { transform: translateX(-50%); text-align: center; }
+.loading { left: 0; top: 280px; width: 768px; text-align: center; font-size: 12px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: #8a8a8a; }
+
+/* top bar */
+.topbar { left: 0; top: 0; width: 768px; height: 74px; background: linear-gradient(#131313, #070707); }
+.vsep { top: 37px; width: 1px; height: 31px; background: #2b2b2b; }
+.t-label { font-size: 10px; font-weight: 600; color: #e4e4e4; }
+.t-dim { font-size: 10px; font-weight: 500; color: var(--dim); }
+.song { width: 246px; overflow: hidden; text-overflow: ellipsis; }    /* clear of the "123 / 219" pill */
+.prog { left: 200px; top: 67px; width: 246px; height: 2px; background: #3a3a3a; }
+.prog i { display: block; height: 100%; width: 0; background: #e8e8e8; }
+.t-pill { font-family: var(--font-cond); height: 17px; padding: 0 7px; border-radius: 9px; background: #d6d6d6; color: #111; font-size: 11px; font-weight: 700; line-height: 17px; font-variant-numeric: tabular-nums; }
+/* collector level: the ring fills up through the song; the level goes up as the next song starts */
+.lvl { width: 25px; height: 25px; }
+.lvl svg { position: absolute; left: 0; top: 0; width: 25px; height: 25px; transform: rotate(-90deg); }
+.lvl circle { fill: none; stroke-width: 2; }
+.lvl .track { stroke: #3a3a3a; }
+.lvl .fill { stroke: var(--level); stroke-dasharray: 72.26; stroke-dashoffset: 72.26; }   /* 2π · 11.5 */
+.lvl p { left: 0; top: 0; width: 25px; font-size: 11.5px; font-weight: 700; line-height: 25px; text-align: center; font-variant-numeric: tabular-nums; }
+.lvl.up { animation: lvlup 0.5s ease-out; }
+@keyframes lvlup { 30% { transform: scale(1.22); filter: drop-shadow(0 0 4px rgba(227, 25, 126, 0.9)); } }
+.num { font-variant-numeric: tabular-nums; }
+.osd { right: 46px; top: 88px; font-size: 14px; font-weight: 700; color: #9be37d; letter-spacing: 0.04em; }
+
+/* left panel: the car */
+.p-title { font-size: 22px; font-weight: 300; color: #dcdcdc; }
+.flag { width: 20px; height: 14px; }
+.flag.jp { background: radial-gradient(circle at 50% 50%, #bc002d 0 4.1px, #f3f3f3 4.6px); }
+.flag.us { background: linear-gradient(#3c3b6e, #3c3b6e) 0 0 / 9px 7.5px no-repeat,
+                       repeating-linear-gradient(#b22234 0 1.08px, #f3f3f3 1.08px 2.16px); }
+.flag.de { background: linear-gradient(#000 0 33.3%, #dd0000 33.3% 66.7%, #ffce00 66.7%); }
+.p-make { font-family: var(--font-cond); font-size: 12.5px; font-weight: 700; letter-spacing: 0.01em; }
+.p-model { font-size: 16.5px; font-weight: 700; }
+.p-paint { font-size: 9.5px; font-weight: 600; color: #dadada; }
+.p-pp { font-family: var(--font-cond); height: 15px; padding: 0 9px; border: 1.5px solid #c9c9c9; border-radius: 10px; font-size: 11px; font-weight: 700; line-height: 15px; }
+.rule { left: 46px; width: 215px; height: 2px; background: var(--rule); }
+.spec { left: 46px; display: flex; align-items: baseline; gap: 12px; }
+.spec dt { width: 54px; text-align: right; font-size: 9.5px; font-weight: 500; color: var(--label); }
+.spec dd { margin: 0; font-size: 12.5px; font-weight: 700; }
+.cond { width: 20px; height: 20px; }
+.cond-l { font-size: 10px; font-weight: 600; }
+.ok { color: var(--ok); }
+.p-type { font-size: 10px; font-weight: 600; color: #cfcfcf; }
+.p-tags { font-size: 9px; font-weight: 600; color: #e8e8e8; }
+
+/* bottom: track dots and the player menu */
+.lr { font-size: 9px; font-weight: 700; color: #cfcfcf; }
+.lr { transition: left 0.35s ease-in-out; }
+.dot { top: 460.5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #9a9a9a; transform: scale(0.6);
+       transition: transform 0.2s, background-color 0.2s, left 0.35s ease-in-out, opacity 0.35s; }
+.dot.on { transform: scale(1); background: #f2f2f2; }
+.dot.wave { animation: dotwave 0.36s ease-in-out; }       /* lit dot looped back to the first: a ripple runs along the row */
+@keyframes dotwave { 45% { transform: translateY(-3px) scale(1.25); background: #fff; } }
+.m-icon { width: 40px; height: 40px; }
+.m-icon.on { color: var(--ok); }
+.m-label { font-size: 11.5px; font-weight: 700; }
+.m-label.on { color: var(--ok); }
+.cursor { left: 0; top: 0; width: 26px; height: 34px; pointer-events: none; will-change: transform; filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.55)); }
+
+/* retro TV mode: scanlines over the whole picture, and a soft phosphor glow on the text */
+#scan { position: fixed; pointer-events: none; z-index: 2;
+        background-image: linear-gradient(rgba(0, 0, 0, 0) 0 45%, rgba(0, 0, 0, 0.32) 60% 100%); background-repeat: repeat; }
+.frame.retro p, .frame.retro h1, .frame.retro dt, .frame.retro dd, .frame.retro span { text-shadow: 0 0 3px rgba(255, 255, 255, 0.22), 0 0 1px rgba(255, 255, 255, 0.35); }
+.frame.retro svg { filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.18)); }
+.frame.retro .cursor { filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.2)); }
+.rb.on { color: #9be37d; }
+
+/* track list */
+.list-bg { left: 30px; top: 82px; width: 708px; height: 372px; background: linear-gradient(90deg, rgba(5,5,5,0.88), rgba(5,5,5,0.7)); border-radius: 4px; }
+.list-row { left: 46px; width: 676px; height: 22px; display: flex; align-items: center; font-size: 11px; font-weight: 600; }
+.list-row.sel { background: rgba(255, 255, 255, 0.1); }
+.list-row .n { width: 30px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.list-row .t { width: 250px; overflow: hidden; text-overflow: ellipsis; }
+.list-row .ar { width: 210px; color: var(--label); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.list-row .g { width: 120px; color: var(--label); font-weight: 500; }
+.list-row .d { flex: 1; text-align: right; color: var(--label); font-variant-numeric: tabular-nums; }
+.list-row.now .t::before { content: "\266A  "; color: var(--ok); }
+
+/* remote (outside the TV picture) */
+.remote { position: fixed; width: 150px; padding: 14px 12px 12px; box-sizing: border-box; background: var(--remote); border: 1px solid #2a2d33;
+          border-radius: 22px; font-family: var(--font); color: #cfd2d8; box-shadow: 0 20px 40px -20px #000; }
+.remote h2 { margin: 0 0 10px; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #7d828c; text-align: center; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.rb { font: 700 11px/1 var(--font); color: #e6e8ec; background: #24272d; border: 1px solid #33373f; border-radius: 9px; height: 34px;
+      display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.rb:hover { background: #2c3037; }
+.rb:active, .rb.hit { transform: translateY(1px); background: #343943; }
+.rb:focus-visible { outline: 2px solid #9be37d; outline-offset: 2px; }
+.rb.ok-btn { border-radius: 50%; background: #2f333b; }
+.rb svg { width: 13px; height: 13px; fill: currentColor; }
+.row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 8px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 5px; margin-top: 5px; }
+.keys { margin: 10px 0 0; font-size: 10px; line-height: 1.5; color: #7d828c; text-align: center; }
+.rb.music { width: 100%; margin-top: 8px; font-size: 11px; }
+#musicMsg { margin-top: 6px; }
+</style>
+
+<canvas id="stage" role="img" aria-label="The current song's car turning slowly in a dark studio"></canvas>
+<div id="scan" aria-hidden="true"></div>
+
+<div class="frame" id="frame">
+  <p class="a loading" id="loading">Loading car…</p>
+
+  <!-- ===== top bar ===== -->
+  <div id="topUI">
+    <div class="a topbar"></div>
+    <svg class="a" style="left:46px;top:38px;width:26px;height:26px" viewBox="0 0 26 26" aria-hidden="true">
+      <circle cx="13" cy="13" r="13" fill="#979797"/>
+      <g fill="none" stroke="#1b1b1b" stroke-width="2"><circle cx="13" cy="13" r="7.2"/><path d="M6 12.2h14M13 14v6"/></g>
+      <circle cx="13" cy="13" r="2.2" fill="#1b1b1b"/>
+    </svg>
+    <div class="a vsep" style="left:80px"></div>
+    <p class="a t-dim" style="left:88px;top:39px">Menu Book</p>
+    <p class="a" style="left:88px;top:55px;font-size:12px;color:#bdbdbd">---</p>
+    <div class="a vsep" style="left:190px"></div>
+    <p class="a song narrow" id="songTitle" style="left:200px;top:37px;font-size:13.5px;font-weight:700">Song title</p>
+    <p class="a song narrow" id="songArtist" style="left:200px;top:53px;font-size:10px;font-weight:500;color:#cfcfcf">Artist name</p>
+    <div class="a prog"><i id="prog"></i></div>
+    <p class="a t-pill" id="trackPill" style="right:247px;top:44px">01 / 12</p>
+    <div class="a vsep" style="left:530px"></div>
+    <p class="a t-label" style="left:538px;top:38px">Collector Level</p>
+    <p class="a" style="left:538px;top:51px;font-size:6.5px;font-weight:600;color:#cfcfcf">To Next Level</p>
+    <p class="a" style="left:538px;top:59px"><b class="num" id="pts" style="font-size:13px">0</b> <span style="font-size:8px;font-weight:600">pts</span></p>
+    <div class="a lvl" id="lvl" style="left:628px;top:41px">
+      <svg viewBox="0 0 25 25" aria-hidden="true"><circle class="track" cx="12.5" cy="12.5" r="11.5"/><circle class="fill" id="lvlFill" cx="12.5" cy="12.5" r="11.5"/></svg>
+      <p class="a" id="level">0</p>
+    </div>
+    <div class="a vsep" style="left:668px"></div>
+    <p class="a num" id="elapsed" style="right:46px;top:37px;font-size:18px;font-weight:700">0:00</p>
+    <p class="a num" id="total" style="right:46px;top:59px;font-size:8px;font-weight:600;color:#d6d6d6">/ 0:00</p>
+  </div>
+  <p class="a osd" id="osd" hidden>▶▶ ×8</p>
+
+  <!-- ===== left panel: the car ===== -->
+  <div id="carUI">
+    <h1 class="a p-title" style="left:46px;top:90px">Garage</h1>
+    <div class="a flag" id="carFlag" style="left:46px;top:122px"></div>
+    <p class="a p-make" id="carMake" style="left:72px;top:123.5px"></p>
+    <p class="a p-model" id="carModel" style="left:46px;top:145px"></p>
+    <p class="a p-paint" id="carPaint" style="left:46px;top:165px"></p>
+    <p class="a p-pp" style="left:46px;top:184px">PP ---</p>
+    <div class="a rule" style="top:214px"></div>
+    <dl class="a" id="carSpecs" style="left:0;top:0"></dl>
+    <div class="a rule" style="top:352px"></div>
+    <svg class="a cond" style="left:62px;top:362px" viewBox="0 0 24 24" aria-hidden="true">
+      <g fill="none" stroke="#e8e8e8" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 12 16.5 7.5M5.5 12H7M12 5.5V7M17 12h1.5M7.4 7.4l1 1M9 17h6"/></g>
+      <circle cx="12" cy="12" r="1.3" fill="#e8e8e8"/>
+    </svg>
+    <svg class="a cond" style="left:117px;top:362px" viewBox="0 0 24 24" aria-hidden="true">
+      <g fill="none" stroke="#3daa6f" stroke-width="1.7" stroke-linejoin="round"><path d="M6 5h8l4 4v12H6zM14 5v4h4M8 3h4"/></g>
+      <path d="M12 12.5c-1.6 2-2.3 3.1-2.3 4a2.3 2.3 0 0 0 4.6 0c0-.9-.7-2-2.3-4z" fill="#3daa6f"/>
+    </svg>
+    <svg class="a cond" style="left:170px;top:362px" viewBox="0 0 24 24" aria-hidden="true">
+      <g fill="#3daa6f"><path d="M7 7h7v2h3l2 2h2v6h-2l-2 2H9l-2-2H5v-3H3v-4h2V9h2z"/><rect x="8" y="4.5" width="6" height="2"/></g>
+    </svg>
+    <svg class="a cond" style="left:224px;top:362px" viewBox="0 0 24 24" aria-hidden="true">
+      <g fill="none" stroke="#3daa6f" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v5" stroke-linecap="round"/></g>
+      <circle cx="12" cy="17.5" r="1" fill="#3daa6f"/>
+    </svg>
+    <p class="a c cond-l" style="left:72px;top:392px">818 miles</p>
+    <p class="a c cond-l ok" style="left:127px;top:392px">Excellent</p>
+    <p class="a c cond-l ok" style="left:180px;top:392px">Excellent</p>
+    <p class="a c cond-l ok" style="left:234px;top:392px">Excellent</p>
+    <p class="a p-type" style="left:46px;top:418px">Car Type:</p>
+    <p class="a p-tags" id="carTags" style="left:46px;top:437px"></p>
+  </div>
+
+  <!-- ===== track list ===== -->
+  <div id="listUI" hidden>
+    <div class="a list-bg"></div>
+    <h1 class="a p-title" style="left:46px;top:92px">Track List</h1>
+    <p class="a num" id="listPage" style="right:46px;top:100px;font-size:10px;font-weight:600;color:var(--label)"></p>
+    <div id="rows"></div>
+    <!-- disc only (render mode): page buttons on the Back row -->
+    <div class="a list-row" id="pgPrev" style="left:500px;width:100px;top:410px" hidden><span class="t">‹ Previous page</span></div>
+    <div class="a list-row" id="pgNext" style="left:620px;width:100px;top:410px" hidden><span class="t">Next page ›</span></div>
+  </div>
+
+  <!-- ===== bottom: track dots + player menu ===== -->
+  <div id="menuUI">
+    <div id="dots"></div>
+    <div id="items"></div>
+  </div>
+  <!-- the cursor: on the disc this is the button highlight, so it jumps between items -->
+  <svg class="a cursor" id="cursor" viewBox="0 0 26 34" aria-hidden="true">
+    <!-- the Windows arrow without its tail, tip at (2,2): grey left face, white right face, dark outline -->
+    <path d="M2 2V27.5L8.6 20.9H19.6Z" fill="#1a1a1a" stroke="#1a1a1a" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M2 2V27.5L8.6 20.9Z" fill="#a9adb3"/>
+    <path d="M2 2 8.6 20.9H19.6Z" fill="#f5f5f5"/>
+  </svg>
+</div>
+
+<div class="remote" id="remote" aria-label="Remote control">
+  <h2>Remote</h2>
+  <div class="pad">
+    <span></span><button type="button" class="rb" data-k="up" aria-label="Up"><svg viewBox="0 0 16 16"><path d="M8 3l6 9H2z"/></svg></button><span></span>
+    <button type="button" class="rb" data-k="left" aria-label="Left"><svg viewBox="0 0 16 16"><path d="M3 8l9-6v12z"/></svg></button>
+    <button type="button" class="rb ok-btn" data-k="enter">OK</button>
+    <button type="button" class="rb" data-k="right" aria-label="Right"><svg viewBox="0 0 16 16"><path d="M13 8 4 2v12z"/></svg></button>
+    <span></span><button type="button" class="rb" data-k="down" aria-label="Down"><svg viewBox="0 0 16 16"><path d="M8 13 2 4h12z"/></svg></button><span></span>
+  </div>
+  <div class="row3">
+    <button type="button" class="rb" data-k="prev" aria-label="Previous track"><svg viewBox="0 0 16 16"><path d="M2 2h2v12H2zM14 2 5 8l9 6z"/></svg></button>
+    <button type="button" class="rb" data-k="pause" aria-label="Play or pause"><svg viewBox="0 0 16 16"><path d="M1 2l6 6-6 6zM9 2h2.2v12H9zM12.8 2H15v12h-2.2z"/></svg></button>
+    <button type="button" class="rb" data-k="next" aria-label="Next track"><svg viewBox="0 0 16 16"><path d="m2 2 9 6-9 6zM12 2h2v12h-2z"/></svg></button>
+  </div>
+  <div class="row2">
+    <button type="button" class="rb" data-k="ff" aria-label="Fast forward"><svg viewBox="0 0 16 16"><path d="M1 3l7 5-7 5zM8 3l7 5-7 5z"/></svg></button>
+    <button type="button" class="rb on" data-k="crt" id="crtBtn" aria-pressed="true" aria-label="Retro TV look">CRT</button>
+    <button type="button" class="rb" data-k="menu">MENU</button>
+  </div>
+  <button type="button" class="rb music" id="musicBtn">Play my music…</button>
+  <input type="file" id="musicPick" webkitdirectory multiple hidden>
+  <p class="keys" id="musicMsg">Pick your music folder to hear the songs. Files stay on this computer.</p>
+  <p class="keys">Arrows · Enter<br>Space pause · F fast-fwd<br>PgUp / PgDn skip · M menu<br>C retro TV · L music</p>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./lib/three.module.js",
+  "three/addons/": "./lib/addons/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// ------------------------------------------------------------------ the playlist (placeholders until the music is in the folder)
+const LENGTHS = [214, 187, 243, 201, 265, 198, 232, 176, 251, 209, 224, 190];
+// one car per song (the "car" column of playlist.csv); real-world specs, power in BHP (1 PS = 0.986 BHP) and torque
+// in kgfm (N·m / 9.807); "---" where no reliable figure was found. Sources: HANDOFF.md §4.
+const NA = 'NA (Naturally Aspirated)', TB = 'TB (Turbo)', SC = 'SC (Supercharger)';
+const spec = (cc, drive, power, torque, kg, asp) =>
+  [['Displacement', cc], ['Drivetrain', drive], ['Max. Power', power], ['Max. Torque', torque], ['Weight', kg], ['Aspiration', asp]];
+const CARS = [
+  { id: '787b', flag: 'jp', make: 'MAZDA', model: "787B '91", paint: 'Orange / Green', tags: 'Racing Car / Group C',
+    specs: spec('2,616 cc', 'MR', '690 BHP / 9,000 rpm', '62.0 kgfm / 6,500 rpm', '830 kg', NA) },
+  { id: 'skyline_r32', flag: 'jp', make: 'NISSAN', model: "Skyline GT-R (R32) '89", paint: 'Red', tags: 'Road Car / Coupe',
+    specs: spec('2,568 cc', '4WD', '276 BHP / 6,800 rpm', '36.0 kgfm / 4,400 rpm', '1,430 kg', TB) },
+  { id: 'clk_gtr', flag: 'de', make: 'MERCEDES-BENZ', model: "CLK-GTR Race Car '97", paint: 'Silver', tags: 'Racing Car / GT1',
+    specs: spec('5,987 cc', 'MR', '592 BHP / 7,000 rpm', '71.4 kgfm / 3,900 rpm', '1,000 kg', NA) },
+  { id: 'lancer_evo7', flag: 'jp', make: 'MITSUBISHI', model: "Lancer Evolution VII GSR '01", paint: 'White', tags: 'Road Car / Sedan',
+    specs: spec('1,997 cc', '4WD', '276 BHP / 6,500 rpm', '39.0 kgfm / 3,500 rpm', '1,400 kg', TB) },
+  { id: 'gt_one', flag: 'jp', make: 'TOYOTA', model: "GT-One (TS020) '99", paint: 'Red / White', tags: 'Racing Car / Le Mans',
+    specs: spec('3,578 cc', 'MR', '600 BHP / 6,000 rpm', '66.2 kgfm / 6,000 rpm', '900 kg', TB) },
+  { id: 'skyline_r34', flag: 'jp', make: 'NISSAN', model: "Skyline GT-R V-spec II (R34) '02", paint: 'Bayside Blue', tags: 'Road Car / Coupe',
+    specs: spec('2,568 cc', '4WD', '276 BHP / 6,800 rpm', '40.0 kgfm / 4,400 rpm', '1,560 kg', TB) },
+  { id: 'castrol_supra', flag: 'jp', make: 'TOYOTA', model: "Castrol TOM'S SUPRA '97", paint: 'White / Red / Green', tags: 'Racing Car / JGTC',
+    specs: spec('1,998 cc', 'FR', '473 BHP', '---', '1,150 kg', TB) },
+  { id: 'ford_gt_lm', flag: 'us', make: 'FORD', model: 'GT LM Spec II Test Car', paint: 'White', tags: 'Racing Car / Le Mans',
+    specs: spec('5,409 cc', 'MR', '592 BHP', '---', '1,150 kg', SC) },
+];
+const FLAG_NAMES = { jp: 'Japan', us: 'United States', de: 'Germany' };
+// the playlist: playlist.json is made from playlist.csv by out/scripts/make_playlist.py
+const SONGS = await fetch('playlist.json').then((r) => r.json()).then((list) =>
+  list.map((s) => ({ ...s, car: Math.max(0, CARS.findIndex((c) => c.id === s.car)) }))
+).catch(() => LENGTHS.map((length, i) => ({ title: `Song title ${i + 1}`, artist: 'Artist name', game: '—', length, car: i % CARS.length, file: '' })));
+const N = SONGS.length;
+const PAGE = 12;                                   // track list rows per page (one DVD menu per page)
+
+// ------------------------------------------------------------------ frame and 3D constants
+const W = 768, H = 576, FRAME_ASPECT = 4 / 3;     // square-pixel PAL frame
+const CAR_X = 0.635;                               // car sits right of centre, clear of the left panel
+const CAR_FILL = 0.58;                             // widest the turning car gets, as a share of the frame width
+const CAR_SPAN = 4.9;                              // the 4.4 m car's diagonal
+const REF_CAR_SPAN_H = 0.96;                       // car width in the reference shot, in frame heights
+const SPIN_SECONDS = 32;                           // about one turn per 32 s (user: 25 % slower), rounded so each song ends on whole turns
+const HERO_YAW = THREE.MathUtils.degToRad(-40);    // front three-quarter, nose left: every song starts and ends here
+const spinYaw = (s, pos) => HERO_YAW + Math.max(1, Math.round(s.length / SPIN_SECONDS)) * 2 * Math.PI * (pos / s.length);
+const END_FADE_S = 2.5;                            // every song fades out over its last seconds
+const SKIP_FADE_S = 1.2;                           // a song left early fades out during the slide
+const ARRIVE_S = 2.2;                              // song change: the old car slides off left as the new one slides in
+const SLIDE_GAP = 11;                              // metres between the two cars: both on screen only for a moment, at the edges
+
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.VSMShadowMap;
+const scene = new THREE.Scene();
+
+function makeEnvironment(r) {
+  // a dark room, one big overhead softbox, a faint strip each side, and the lit floor below
+  const env = new THREE.Scene();
+  env.background = new THREE.Color(0x0a0a0a);
+  const panel = (w, h, x, y, z, i) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(i, i, i), side: THREE.DoubleSide }));
+    m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
+  };
+  panel(9, 6, 0.8, 7, 1.5, 5.0);
+  panel(14, 0.8, 0, 3.2, 10, 0.45);
+  panel(14, 0.5, 0, 1.0, -9, 0.6);
+  panel(2, 5, -8, 2.0, 3, 0.35);
+  panel(2, 5, 8, 2.0, -3, 0.35);
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(5, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.32, 0.32, 0.32) }));
+  pool.rotation.x = -Math.PI / 2; pool.position.y = -0.6; env.add(pool);
+  const pm = new THREE.PMREMGenerator(r);
+  const tex = pm.fromScene(env, 0.02).texture;
+  pm.dispose();
+  return tex;
+}
+scene.environment = makeEnvironment(renderer);
+
+// ---- anti-aliasing: the car layer (car, shadows) is rendered at up to 2x the screen resolution
+// with 4x MSAA into its own transparent layer, then filtered down. Supersampling like this is the
+// browser's way to the clean edges DLSS gives in games.
+const carLayer = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+renderer.setClearColor(0x000000, 0);
+
+// ---- final picture: studio backdrop (screen space, tones measured from the reference shot),
+// the supersampled car layer on top, then the optional retro TV treatment
+const bgUniforms = {
+  tCar: { value: carLayer.texture },
+  uRes: { value: new THREE.Vector2(1, 1) },
+  uAnchor: { value: new THREE.Vector2(CAR_X, 0.68) },
+  uScale: { value: 1 },
+  uAspect: { value: FRAME_ASPECT },
+  uRetro: { value: 1 },
+  uTime: { value: 0 },
+};
+const compositeScene = new THREE.Scene(), compositeCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const composite = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+  depthTest: false, depthWrite: false, toneMapped: false, uniforms: bgUniforms,
+  vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }',
+  fragmentShader: `
+uniform sampler2D tCar;
+uniform vec2 uRes, uAnchor; uniform float uScale, uAspect, uRetro, uTime;
+vec3 srgbToLinear(vec3 c){ return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
+vec3 linearToSrgb(vec3 c){ return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
+float bump(float x, float c, float sUp, float sDown){ float s = x < c ? sUp : sDown; float d = (x - c) / s; return exp(-0.5 * d * d); }
+float wall(vec2 uv){                       // charcoal wall, brightest behind the car, darker to the sides and ceiling
+  float dx = (uv.x - uAnchor.x) * uAspect;
+  return 0.255 * exp(-dx * dx / (2.0 * 0.658 * 0.658)) * (1.0 - 0.5 * max(0.0, 0.45 - uv.y));
+}
+float floorTone(vec2 uv){                  // flat-topped pool of light under the car
+  float y = (uv.y - uAnchor.y) / uScale;
+  float dx = (uv.x - uAnchor.x) * uAspect / uScale - 0.027;
+  float centre = 0.04 + 0.80 * bump(y, 0.025, 0.048, 0.092);
+  return 0.03 + (centre - 0.03) * exp(-0.5 * pow(abs(dx) / 0.599, 2.8));
+}
+float backdrop(vec2 uv){                   // sRGB grey level
+  float cove = 1.0 - 0.3 * bump(uv.y, uAnchor.y - 0.1 * uScale, 0.03, 0.03);
+  float w = wall(uv) * cove * (1.0 - smoothstep(uAnchor.y - 0.06 * uScale, uAnchor.y + 0.02 * uScale, uv.y));
+  return max(w, floorTone(uv)) * (1.0 - 0.6 * smoothstep(0.9, 1.0, uv.y));
+}
+vec3 neutralToneMap(vec3 c){               // Khronos PBR Neutral, as used for the car before
+  float x = min(c.r, min(c.g, c.b));
+  c -= x < 0.08 ? x - 6.25 * x * x : 0.04;
+  float peak = max(c.r, max(c.g, c.b));
+  if (peak < 0.76) return c;
+  float newPeak = 1.0 - 0.0576 / (peak - 0.52);
+  c *= newPeak / peak;
+  return mix(c, vec3(newPeak), 1.0 - 1.0 / (0.15 * (peak - newPeak) + 1.0));
+}
+vec3 sceneAt(vec2 uv){                     // linear colour: backdrop with the car layer over it
+  vec2 o = 0.3 / uRes;                     // 4-tap filter over the supersampled layer
+  vec4 c = 0.25 * (texture2D(tCar, uv + vec2(-o.x, -o.y)) + texture2D(tCar, uv + vec2(o.x, -o.y))
+                 + texture2D(tCar, uv + vec2(-o.x, o.y)) + texture2D(tCar, uv + vec2(o.x, o.y)));
+  vec3 car = c.a > 0.0001 ? neutralToneMap(c.rgb / c.a) * c.a : vec3(0.0);
+  return srgbToLinear(vec3(backdrop(vec2(uv.x, 1.0 - uv.y)))) * (1.0 - c.a) + car;
+}
+float b2(vec2 v){ return mod(2.0 * v.x + 3.0 * v.y, 4.0); }
+float bayer4(vec2 p){ return (4.0 * b2(mod(p, 2.0)) + b2(mod(floor(p * 0.5), 2.0)) + 0.5) / 16.0; }
+float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec3 lin;
+  if (uRetro > 0.5) {
+    float px = 0.75 / 768.0;               // a little red/blue mis-convergence, like a tube
+    lin = vec3(sceneAt(uv + vec2(px, 0.0)).r, sceneAt(uv).g, sceneAt(uv - vec2(px, 0.0)).b);
+  } else {
+    lin = sceneAt(uv);
+  }
+  vec3 c = linearToSrgb(max(lin, 0.0));
+  if (uRetro > 0.5) {
+    vec2 grid = floor(uv * vec2(768.0, 576.0));                    // the PAL pixel grid
+    c = floor(c * 63.0 + bayer4(grid)) / 63.0;                     // 6-bit colour with ordered dither, PS2 style
+    vec2 v = uv - 0.5; c *= 1.0 - 0.45 * dot(v, v);                // vignette
+    c += (hash(grid + fract(uTime) * 61.0) - 0.5) * 0.02;          // faint grain
+  } else {
+    c += (hash(gl_FragCoord.xy) - 0.5) / 255.0;                    // break up banding
+  }
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`,
+}));
+composite.frustumCulled = false;
+compositeScene.add(composite);
+
+const shadowCatcher = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.6 }));
+shadowCatcher.rotation.x = -Math.PI / 2; shadowCatcher.position.y = 0.002; shadowCatcher.receiveShadow = true;
+function makeContact() {                             // soft dark patch under a car, on top of its real shadow
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'), grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0, 'rgba(0,0,0,0.9)'); grd.addColorStop(0.55, 'rgba(0,0,0,0.6)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 5.0), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, toneMapped: false }));
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.004; m.renderOrder = 1;
+  const holder = new THREE.Group(); holder.add(m); holder.visible = false;
+  return holder;
+}
+const contact = makeContact(), contactOut = makeContact();
+function makeKeyLight(withShadow) {
+  const key = new THREE.DirectionalLight(0xffffff, 2.2);
+  key.position.set(2.0, 10, 3.0);
+  if (withShadow) {
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    Object.assign(key.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 22 });   // wide: cars slide past the frame edges
+    key.shadow.radius = 12; key.shadow.blurSamples = 20; key.shadow.bias = -0.0004;
+  }
+  return key;
+}
+const turntable = new THREE.Group();                 // the current song's car: yaw and slide-in position
+const leaving = new THREE.Group();                   // the previous car while it slides off to the left
+scene.add(shadowCatcher, contact, contactOut, makeKeyLight(true), new THREE.HemisphereLight(0xffffff, 0x444444, 0.25), turntable, leaving);
+
+
+// ------------------------------------------------------------------ layout: 4:3 frame + remote
+const camera = new THREE.PerspectiveCamera(28, FRAME_ASPECT, 0.1, 200);
+const frame = document.getElementById('frame'), remote = document.getElementById('remote');
+function layout() {
+  const w = window.innerWidth, h = window.innerHeight;
+  const RW = 150, RH = 430, GAP = 16;
+  let boxW = Math.min(w, h * FRAME_ASPECT);
+  const fitBeside = Math.min(boxW, w - 2 * (RW + 2 * GAP));       // shrink the picture a little to make room for the remote
+  let x0, y0, rx = null, ry = null;
+  if (fitBeside >= boxW * 0.85 && w > h) {      // remote in the right-hand margin
+    boxW = fitBeside; x0 = (w - boxW) / 2; y0 = (h - boxW / FRAME_ASPECT) / 2;
+    rx = x0 + boxW + ((w - boxW) / 2 - RW) / 2; ry = (h - RH) / 2;
+  } else if (h - w / FRAME_ASPECT >= RH + GAP) { // tall screen: frame on top, remote underneath
+    boxW = w; x0 = 0; y0 = 0;
+    rx = (w - RW) / 2; ry = boxW / FRAME_ASPECT + GAP;
+  } else {                                        // no room: keyboard only
+    x0 = (w - boxW) / 2; y0 = (h - boxW / FRAME_ASPECT) / 2;
+  }
+  const boxH = boxW / FRAME_ASPECT;
+  remote.hidden = rx === null;
+  if (rx !== null) Object.assign(remote.style, { left: `${rx}px`, top: `${ry}px` });
+  frame.style.transform = `translate(${x0}px, ${y0}px) scale(${boxW / W})`;
+  Object.assign(canvas.style, { left: `${x0}px`, top: `${y0}px`, width: `${boxW}px`, height: `${boxH}px` });
+
+  renderer.setSize(boxW, boxH, false);
+  frameSize = [boxW, boxH];
+  placeCamera();
+  renderer.getDrawingBufferSize(bgUniforms.uRes.value);
+  const ss = Math.max(1, Math.min(2, 3200 / bgUniforms.uRes.value.x));   // supersampling factor, capped for big screens
+  carLayer.setSize(Math.round(bgUniforms.uRes.value.x * ss), Math.round(bgUniforms.uRes.value.y * ss));
+  // scanlines for the retro mode: drawn in screen pixels over the whole picture, about 300 lines
+  const dpr = renderer.getPixelRatio(), period = Math.max(2, Math.round((boxH * dpr) / 300)) / dpr;
+  Object.assign(document.getElementById('scan').style, { left: `${x0}px`, top: `${y0}px`, width: `${boxW}px`, height: `${boxH}px`,
+    backgroundSize: `100% ${period}px` });
+}
+// the camera sits low at three-quarters; the backdrop is anchored to where the car stands
+let frameSize = [W, H];
+function placeCamera() {
+  const [boxW, boxH] = frameSize;
+  const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const dist = CAR_SPAN / CAR_FILL / (2 * halfH * FRAME_ASPECT);
+  camera.position.set(0, 0.55 + dist * 0.085, dist);
+  camera.lookAt(0, 0.95, 0);
+  camera.setViewOffset(boxW, boxH, -(CAR_X - 0.5) * boxW, 0, boxW, boxH);   // slide the car to the right
+  camera.updateMatrixWorld();
+  const a = new THREE.Vector3(0, 0, 0).project(camera), b = new THREE.Vector3(1, 0, 0).project(camera);
+  bgUniforms.uAnchor.value.set(a.x * 0.5 + 0.5, 0.5 - a.y * 0.5);
+  bgUniforms.uScale.value = ((b.x - a.x) * 0.5 * FRAME_ASPECT) * CAR_SPAN / REF_CAR_SPAN_H;
+}
+window.addEventListener('resize', layout);
+layout();
+
+// ------------------------------------------------------------------ the player UI
+const $ = (id) => document.getElementById(id);
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const pad2 = (n) => String(n).padStart(2, '0');
+
+const ITEM_X = [84, 184, 284, 384, 484, 584, 684], ICON_Y = 474, LABEL_Y = 521;
+const ICONS = {
+  prev: '<path d="M8 8h3.4v24H8zM32 8 13 20l19 12z"/>',
+  play: '<path d="M11 7l22 13-22 13z"/>',
+  pause: '<path d="M10 8h7v24h-7zM23 8h7v24h-7z"/>',
+  next: '<path d="M8 8l19 12L8 32zM28.6 8H32v24h-3.4z"/>',
+  shuffle: '<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h6c6 0 10 16 16 16h5M5 28h6c2.6 0 4.6-3 6.6-6.4M22.4 18.4C24.4 15 26.4 12 29 12h3"/><path d="M28 7.5 32.5 12 28 16.5M28 23.5 32.5 28 28 32.5"/></g>',
+  list: '<g fill="currentColor"><rect x="6" y="9" width="5" height="5" rx="1"/><rect x="6" y="18" width="5" height="5" rx="1"/><rect x="6" y="27" width="5" height="5" rx="1"/><rect x="14" y="10" width="20" height="3" rx="1"/><rect x="14" y="19" width="20" height="3" rx="1"/><rect x="14" y="28" width="20" height="3" rx="1"/></g>',
+  showroom: '<g fill="currentColor"><path d="M8 22.5c.6-2.6 2-4 4.4-4.6l3.6-3.4c1-.9 2.2-1.4 3.6-1.4h5.2c1.3 0 2.4.5 3.2 1.5l2.6 3.2c1.6.5 2.6 1.6 2.9 3.2v2.8H8z"/><circle cx="13.5" cy="25" r="2.6"/><circle cx="27.5" cy="25" r="2.6"/></g><ellipse cx="20" cy="29.5" rx="15" ry="4" fill="none" stroke="currentColor" stroke-width="2.4"/>',
+  repeat: '<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21v-4a5 5 0 0 1 5-5h17M31 19v4a5 5 0 0 1-5 5H9"/><path d="M27 8l4 4-4 4M13 24l-4 4 4 4"/></g>',
+};
+const ITEMS = ['prev', 'play', 'next', 'shuffle', 'list', 'showroom', 'repeat'];
+const LABELS = { prev: 'Previous', play: 'Play', next: 'Next', shuffle: 'Shuffle', list: 'Track List', showroom: 'Showroom', repeat: 'Repeat' };
+$('items').innerHTML = ITEMS.map((id, i) => `
+  <svg class="a m-icon" id="ic-${id}" style="left:${ITEM_X[i] - 20}px;top:${ICON_Y}px;color:#fff" viewBox="0 0 40 40" fill="currentColor" aria-hidden="true">${ICONS[id]}</svg>
+  <p class="a c m-label" id="lb-${id}" style="left:${ITEM_X[i]}px;top:${LABEL_Y}px">${LABELS[id]}</p>`).join('');
+// page dots, like the reference: rows of 15, one dot per song. The lit dot steps along with the songs; when a
+// song is the first of its row (after the 15th, or from the last song back to song 1) a ripple runs along the row.
+// On the disc each song's video shows its own row, and the ripple is part of that song's roll-in clip.
+const DOTS = 15, DOT_STEP = 20, ROW_DOTS = Math.min(DOTS, N);
+$('dots').innerHTML = '<p class="a c lr" id="dotL1" style="left:384px;top:458.5px">L1</p><p class="a c lr" id="dotR1" style="left:384px;top:458.5px">R1</p>'
+  + Array.from({ length: ROW_DOTS }, (_, i) => `<div class="a dot" id="dot${i}" style="left:384px;opacity:0"></div>`).join('');
+for (let i = 0; i < ROW_DOTS; i++) $(`dot${i}`).addEventListener('animationend', (e) => e.target.classList.remove('wave'));
+let dotsFor = -1;
+function showDots() {
+  if (st.cur === dotsFor) return;
+  const loop = dotsFor !== -1 && st.cur % DOTS === 0;
+  dotsFor = st.cur;
+  const first = st.cur - (st.cur % DOTS), n = Math.min(DOTS, N - first), x0 = 384 - ((n - 1) * DOT_STEP) / 2;
+  $('dotL1').style.left = `${x0 - 28}px`;
+  $('dotR1').style.left = `${x0 + (n - 1) * DOT_STEP + 28}px`;
+  for (let i = 0; i < ROW_DOTS; i++) {               // a shorter last row: the spare dots fold into its end
+    const d = $(`dot${i}`);
+    d.style.left = `${x0 + Math.min(i, n - 1) * DOT_STEP}px`;
+    d.style.opacity = i < n ? '1' : '0';
+    d.classList.toggle('on', first + i === st.cur);
+    if (loop && i < n && !reduceMotion) {
+      d.classList.remove('wave'); void d.offsetWidth;
+      d.style.animationDelay = `${0.15 + i * 0.03}s`;
+      d.classList.add('wave');
+    }
+  }
+}
+// track list: twelve rows per page plus Back; on the disc each page is its own menu
+const PAGES = Math.ceil(N / PAGE);
+const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+$('rows').innerHTML = Array.from({ length: PAGE }, (_, i) =>
+  `<div class="a list-row" id="slot${i}" style="top:${128 + i * 23}px"><span class="n"></span><span class="t"></span><span class="ar"></span><span class="g"></span><span class="d"></span></div>`).join('')
+  + `<div class="a list-row" id="slotBack" style="top:${128 + PAGE * 23 + 6}px"><span class="n"></span><span class="t">Back</span></div>`;
+let shownPage = -1;
+function showListPage(p) {
+  if (p === shownPage) return;
+  shownPage = p;
+  for (let i = 0; i < PAGE; i++) {
+    const k = p * PAGE + i, row = $(`slot${i}`), s = SONGS[k];
+    row.hidden = !s;
+    if (!s) continue;
+    const [n, t, ar, g, d] = row.children;
+    n.textContent = pad2(k + 1); t.textContent = s.title; ar.textContent = s.artist; g.textContent = s.game; d.textContent = fmt(s.length);
+  }
+  $('listPage').textContent = PAGES > 1 ? `Page ${p + 1} / ${PAGES}` : '';
+}
+
+// ------------------------------------------------------------------ player state (everything here maps to something a DVD can do)
+const st = {
+  mode: 'loading',          // loading | arrive | player | list | showroom
+  cur: Math.floor(Math.random() * N),   // the disc starts on a random song
+  pos: 0, playing: true, ff: 1,
+  points: 0,                // Collector Level points (seconds of music played this session)
+  shuffle: true, repeat: false,
+  hl: 1,                    // highlighted menu item; starts on Play
+  listHl: 0, listPage: 0,
+  history: [],
+  recentCars: [],           // the last RECENT_CARS cars shown, newest last
+  arriveStart: 0, yaw: HERO_YAW,
+  outYaw: 0,                // the leaving car's angle when the song change began
+  fadeAt: 0, fadeFrom: 1,   // when the old song started fading out, and from what volume
+};
+
+// ---- your music in the preview: pick the music folder and the songs play from this computer
+// (nothing is uploaded). Without it the player runs silently on the songs' real lengths.
+const audio = new Audio();
+audio.preload = 'auto';
+const audioURLs = new Map();                       // file name (lower case) -> local object URL
+const songURL = (k) => audioURLs.get((SONGS[k].file || '').toLowerCase());
+function startAudio() {                            // load the current song's file and line it up with the player
+  const url = songURL(st.cur);
+  if (!url) { audio.pause(); audio.removeAttribute('src'); return; }
+  if (audio.src !== url) audio.src = url;
+  audio.currentTime = st.pos;
+  audio.volume = 1;
+  syncAudio();
+}
+function syncAudio() {                             // follow the player: play, pause, silent fast-forward
+  if (!audio.getAttribute('src') || st.mode === 'arrive') return;   // during a song change the old song is fading out
+  audio.playbackRate = st.ff;
+  audio.muted = st.ff > 1;
+  const run = st.playing && (st.mode === 'player' || st.mode === 'showroom' || st.mode === 'list');
+  if (run && audio.paused) {
+    if (Math.abs(audio.currentTime - st.pos) > 0.5) audio.currentTime = st.pos;   // catch up if the clock ran silently
+    audio.play().catch(() => {});                  // browsers block sound until the first click or key press
+  }
+  else if (!run && !audio.paused) audio.pause();
+}
+audio.addEventListener('ended', () => { if (st.mode !== 'arrive') songEnded(); });
+// on the local preview server (out/scripts/serve_preview.py) the songs play straight from the music folder
+// (and in the standalone copy, "GT Music Player", the music folder sits next to the page)
+const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const MUSIC_ROOT = location.pathname.includes('/out/preview/web/') ? '../../../' : './';
+if (LOCAL) for (const s of SONGS) if (s.path) audioURLs.set(s.file.toLowerCase(), new URL(MUSIC_ROOT + s.path.split('/').map(encodeURIComponent).join('/'), location.href).href);
+// Shuffle never brings back one of the last RECENT_CARS cars: a car returns only after 3 others (user, 8 Oct).
+// In playlist order the cars already take turns (playlist.csv rotates all 8). On the disc: the last three car ids
+// sit in GPRMs, the car of song k is k mod 8, and random() is drawn again until it is none of them.
+const RECENT_CARS = 3;
+function pickNext() {
+  if (!st.shuffle) return (st.cur + 1) % N;
+  const songs = [...Array(N).keys()].filter((k) => k !== st.cur || N === 1);
+  const fresh = songs.filter((k) => !st.recentCars.includes(SONGS[k].car));
+  const pool = fresh.length ? fresh : songs;        // fewer than 4 cars in the playlist: just avoid the same song
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+// Song change: the current car stops turning and slides off to the left while the next song's car slides in from
+// the right, SLIDE_GAP behind it, and stops on the hero pose (ease in, ease out). Both cars face the same way:
+// a song that ran to its end is already back on the hero pose (whole turns); one left early turns to it as it
+// starts to slide. The old song fades out meanwhile. On the disc this is a short clip per (previous car, next
+// song), picked with the previous car kept in a GPRM; a skip there snaps to the hero pose and cuts the sound.
+function goTo(k, remember = true) {
+  if (remember && k !== st.cur) st.history.push(st.cur);
+  st.cur = k; st.pos = 0; st.playing = true; st.ff = 1;
+  st.recentCars = [...st.recentCars, SONGS[k].car].slice(-RECENT_CARS);
+  st.mode = 'arrive'; st.arriveStart = Infinity;   // the old car waits where it is until the new one is ready
+  leaving.clear();
+  if (turntable.children.length) {
+    leaving.add(...turntable.children);
+    st.outYaw = turntable.rotation.y;
+    contactOut.visible = true;
+  }
+  contact.visible = false; st.yaw = HERO_YAW;
+  st.fadeAt = performance.now(); st.fadeFrom = audio.volume;
+  refresh();
+  const want = k;
+  loadCar(SONGS[k].car).then((obj) => {
+    if (st.cur !== want || st.mode !== 'arrive') return;
+    turntable.add(obj.parent === leaving ? obj.clone() : obj);   // same car twice in a row: a copy comes in
+    contact.visible = true;
+    st.arriveStart = performance.now();
+  }).catch(() => {});                              // the message is shown by loadCar
+}
+function songStarted() { st.mode = 'player'; st.yaw = HERO_YAW; st.pos = 0; startAudio(); refresh(); }
+function restartSong() { st.pos = 0; startAudio(); refresh(); }    // same song again
+function songEnded() {
+  if (st.repeat) { restartSong(); return; }
+  goTo(pickNext());
+}
+function activate(id) {
+  if (id === 'prev') { if (st.history.length) goTo(st.history.pop(), false); else restartSong(); }
+  else if (id === 'play') { st.playing = !st.playing; st.ff = 1; refresh(); }
+  else if (id === 'next') goTo(pickNext());
+  else if (id === 'shuffle') { st.shuffle = !st.shuffle; refresh(); }
+  else if (id === 'repeat') { st.repeat = !st.repeat; refresh(); }
+  else if (id === 'list') { st.mode = 'list'; st.listHl = st.cur; st.listPage = Math.floor(st.cur / PAGE); refresh(); }
+  else if (id === 'showroom') { st.mode = 'showroom'; refresh(); }
+}
+function setRetro(on) {                          // preview-only look switch (not a disc button)
+  bgUniforms.uRetro.value = on ? 1 : 0;
+  $('frame').classList.toggle('retro', on);
+  $('scan').hidden = !on;
+  $('crtBtn').classList.toggle('on', on);
+  $('crtBtn').setAttribute('aria-pressed', String(on));
+}
+function press(k) {
+  flashRemote(k);
+  if (k === 'crt') { setRetro(bgUniforms.uRetro.value < 0.5); return; }
+  if (k === 'music') { $('musicPick').click(); return; }
+  if (st.mode === 'loading' || st.mode === 'arrive') return;          // transitions have no buttons
+  if (st.mode === 'showroom') { st.mode = 'player'; refresh(); return; }
+  if (k === 'pause') { st.playing = !st.playing; st.ff = 1; refresh(); return; }
+  if (k === 'ff') { st.ff = st.ff === 1 ? 8 : 1; st.playing = true; refresh(); return; }
+  if (k === 'next') { goTo(pickNext()); return; }
+  if (k === 'prev') { activate('prev'); return; }
+  if (st.mode === 'list') {                       // ↑↓ rows (Back sits under each page), ←→ pages
+    const first = st.listPage * PAGE, last = Math.min(N, first + PAGE) - 1;
+    if (k === 'down') st.listHl = st.listHl === N ? first : st.listHl === last ? N : st.listHl + 1;
+    else if (k === 'up') st.listHl = st.listHl === N ? last : st.listHl === first ? N : st.listHl - 1;
+    else if (k === 'left' || k === 'right') {
+      const p = (st.listPage + (k === 'right' ? 1 : PAGES - 1)) % PAGES, slot = st.listHl === N ? 0 : st.listHl - first;
+      st.listPage = p; st.listHl = Math.min(p * PAGE + slot, Math.min(N, (p + 1) * PAGE) - 1);
+    }
+    else if (k === 'menu') st.mode = 'player';
+    else if (k === 'enter') { if (st.listHl === N) st.mode = 'player'; else { goTo(st.listHl); return; } }
+    if (st.listHl < N) st.listPage = Math.floor(st.listHl / PAGE);
+    refresh(); return;
+  }
+  if (k === 'left') st.hl = (st.hl + ITEMS.length - 1) % ITEMS.length;
+  else if (k === 'right') st.hl = (st.hl + 1) % ITEMS.length;
+  else if (k === 'enter') { activate(ITEMS[st.hl]); return; }
+  else if (k === 'menu') { activate('list'); return; }
+  refresh();
+}
+
+function showCarInfo(c) {                         // left panel: the current song's car
+  $('carFlag').className = `a flag ${c.flag}`;
+  $('carFlag').setAttribute('aria-label', FLAG_NAMES[c.flag]);
+  $('carMake').textContent = c.make;
+  $('carModel').textContent = c.model;
+  $('carPaint').textContent = `Base Colour: ${c.paint}`;
+  $('carTags').textContent = c.tags;
+  $('carSpecs').innerHTML = c.specs.map(([k, v], i) =>
+    `<div class="a spec" style="top:${230.2 + i * 19}px"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+}
+let shownCar = -1;
+function refresh() {
+  const s = SONGS[st.cur], mode = st.mode;
+  if (s.car !== shownCar) { shownCar = s.car; showCarInfo(CARS[s.car]); }
+  $('songTitle').textContent = s.title;
+  $('songArtist').textContent = `${s.artist}${s.game !== '—' ? ' · ' + s.game : ''}`;
+  $('trackPill').textContent = `${pad2(st.cur + 1)} / ${pad2(N)}`;
+  $('total').textContent = `/ ${fmt(s.length)}`;
+  showDots();
+  // play / pause item shows what pressing it will do
+  $('ic-play').innerHTML = st.playing ? ICONS.pause : ICONS.play;
+  $('lb-play').textContent = st.playing ? 'Pause' : 'Play';
+  for (const id of ['shuffle', 'repeat']) {
+    const on = st[id];
+    $(`ic-${id}`).style.color = on ? 'var(--ok)' : '#fff';
+    $(`lb-${id}`).classList.toggle('on', on);
+  }
+  const showUI = mode !== 'showroom';
+  $('topUI').hidden = !showUI;
+  $('carUI').hidden = !showUI || mode === 'list';
+  $('menuUI').hidden = !showUI || mode === 'list';
+  $('listUI').hidden = mode !== 'list';
+  $('osd').hidden = !(st.ff > 1 && showUI);
+  if (mode === 'list') {
+    showListPage(st.listPage);
+    for (let i = 0; i < PAGE; i++) {
+      const k = st.listPage * PAGE + i;
+      $(`slot${i}`).classList.toggle('sel', k === st.listHl);
+      $(`slot${i}`).classList.toggle('now', k === st.cur);
+    }
+    $('slotBack').classList.toggle('sel', st.listHl === N);
+  }
+  syncAudio();
+  // the cursor sits on the highlighted menu item, or on the highlighted row of the track list;
+  // the tip sits on the centre of the highlighted icon, as in the reference (or at the start of the list row)
+  const shown = mode === 'player' || mode === 'list';
+  $('cursor').style.display = shown ? 'block' : 'none';
+  if (shown) {
+    const slot = st.listHl === N ? PAGE : st.listHl - st.listPage * PAGE;
+    const [x, y] = mode === 'list' ? [32, 128 + slot * 23 + (st.listHl === N ? 6 : 0) + 9] : [ITEM_X[st.hl] - 2, ICON_Y + 20 - 2];
+    moveCursor(x, y, mode !== cursorGlide.mode);   // jumping between the menu and the list is instant
+    cursorGlide.mode = mode;
+  } else cursorGlide.mode = '';
+}
+
+// cursor glide, like the game: it picks up speed, travels, then eases into place.
+// Longer moves take a little longer; a new press mid-glide sets off again from where it is.
+const cursorGlide = { x: 0, y: 0, fx: 0, fy: 0, tx: 0, ty: 0, t0: 0, dur: 0, mode: '' };
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function placeCursor(x, y) { cursorGlide.x = x; cursorGlide.y = y; $('cursor').style.transform = `translate(${x}px, ${y}px)`; }
+function moveCursor(x, y, instant) {
+  const g = cursorGlide;
+  if (instant || reduceMotion) { g.dur = 0; g.tx = x; g.ty = y; placeCursor(x, y); return; }
+  if (x === g.tx && y === g.ty) return;
+  Object.assign(g, { fx: g.x, fy: g.y, tx: x, ty: y, t0: performance.now() });
+  g.dur = 0.17 + Math.min(0.3, Math.hypot(x - g.x, y - g.y) / 1500);
+}
+function stepCursor(now) {
+  const g = cursorGlide;
+  if (!g.dur) return;
+  const u = Math.min(1, (now - g.t0) / 1000 / g.dur);
+  const e = u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2;   // ease in, then ease out
+  placeCursor(g.fx + (g.tx - g.fx) * e, g.fy + (g.ty - g.fy) * e);
+  if (u >= 1) g.dur = 0;
+}
+
+// Collector Level: 1 point per second of music played. Level 1 needs 100 points and every level about 39 more, so
+// level 50 needs 2,000 (user, 8 Oct). Not saved: every start is level 1, as on the disc (a DVD player forgets
+// everything when switched off). On the disc the ring / points can't follow a running total; the level number can.
+const RING = 2 * Math.PI * 11.5;
+const levelNeed = (L) => Math.round((100 + (L - 1) * 1900 / 49) / 10) * 10;
+function levelOf(points) {
+  let level = 1, into = points;
+  while (into >= levelNeed(level)) { into -= levelNeed(level); level++; }
+  return { level, into, need: levelNeed(level) };
+}
+function addPoints(n) {
+  const before = levelOf(st.points).level;
+  st.points += n;
+  if (levelOf(st.points).level > before) {                         // level up: the ring pulses
+    const el = $('lvl');
+    el.classList.remove('up'); void el.offsetWidth; if (!reduceMotion) el.classList.add('up');
+  }
+}
+function tickUI() {
+  const s = SONGS[st.cur], lv = levelOf(st.points);
+  $('elapsed').textContent = fmt(st.pos);
+  $('prog').style.width = `${(st.pos / s.length) * 100}%`;
+  $('level').textContent = lv.level;
+  $('pts').textContent = Math.ceil(lv.need - lv.into);            // points still needed for the next level
+  $('lvlFill').style.strokeDashoffset = RING * (1 - lv.into / lv.need);
+}
+
+// ------------------------------------------------------------------ remote and keyboard
+function flashRemote(k) {
+  const b = document.querySelector(`.rb[data-k="${k}"]`);
+  if (b) { b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 120); }
+}
+document.querySelectorAll('.rb[data-k]').forEach((b) => b.addEventListener('click', () => press(b.dataset.k)));
+$('musicBtn').addEventListener('click', () => $('musicPick').click());
+$('musicPick').addEventListener('change', (e) => {
+  for (const f of e.target.files) {
+    if (!/\.(mp3|m4a|flac|wav|ogg)$/i.test(f.name)) continue;
+    const key = f.name.toLowerCase();
+    if (!audioURLs.has(key)) audioURLs.set(key, URL.createObjectURL(f));
+  }
+  const ready = SONGS.filter((s) => audioURLs.has((s.file || '').toLowerCase())).length;
+  $('musicMsg').textContent = ready
+    ? `${ready} of ${N} songs ready. Files stay on this computer.`
+    : 'No songs from the playlist in that folder. Pick the folder with your MP3s.';
+  if (st.mode !== 'loading' && st.mode !== 'arrive') startAudio();
+  e.target.value = '';
+});
+const KEYMAP = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'enter',
+  ' ': 'pause', PageDown: 'next', PageUp: 'prev', n: 'next', p: 'prev', f: 'ff', F: 'ff', m: 'menu', M: 'menu', Escape: 'menu', c: 'crt', C: 'crt', l: 'music', L: 'music' };
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) return;
+  const k = KEYMAP[e.key];
+  if (!k) return;
+  e.preventDefault();
+  press(k);
+});
+
+// ------------------------------------------------------------------ start
+const RENDER = new URLSearchParams(location.search).has('render');   // frame capture for the disc, see the end
+setRetro(!RENDER);
+if (LOCAL) {
+  $('musicMsg').textContent = 'Songs play from your music folder. Click or press a key once to turn the sound on.';
+  const unlock = () => { syncAudio(); window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock); };
+  window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
+}
+refresh(); tickUI();
+// cars: <id>.gltf.json made by out/scripts/prep_gltf_car.py + pack_web_car.py (4.4 m long, nose +Z, wheels on y = 0);
+// their own PBR materials are kept, they just cast the studio shadow
+const carCache = new Map();
+async function fetchCar(id, tries = 3) {           // a dropped download is retried before giving up
+  for (let t = 1; ; t++) {
+    try {
+      const { scene: car } = await new GLTFLoader().loadAsync(`${id}.gltf.json`);
+      car.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      return car;
+    } catch (err) {
+      if (t >= tries) throw err;
+      await new Promise((r) => setTimeout(r, 800 * t));
+    }
+  }
+}
+function loadCar(i) {
+  if (!carCache.has(i)) {
+    const make = fetchCar(CARS[i].id);
+    make.catch(() => { carCache.delete(i); $('loading').hidden = false; $('loading').textContent = `Could not load the ${CARS[i].make} model`; });
+    carCache.set(i, make.then(async (obj) => {
+      renderer.setRenderTarget(carLayer);                     // compile for the layer it will be drawn into
+      const ready = renderer.compileAsync(obj, camera, scene);
+      renderer.setRenderTarget(null);
+      await ready;
+      return obj;
+    }));
+  }
+  return carCache.get(i);
+}
+if (!RENDER) loadCar(SONGS[st.cur].car).then(() => {
+  $('loading').hidden = true;
+  goTo(st.cur, false);
+  (async () => { for (let i = 0; i < CARS.length; i++) await loadCar(i).catch(() => {}); })();   // the rest, one at a time
+}).catch(() => { $('loading').textContent = 'Could not load the car model'; });
+
+// ------------------------------------------------------------------ frame capture for the disc (?render)
+// The disc's video is built from frames drawn here on request: render.car() draws one car (or two, mid-slide) at a
+// given angle and returns the picture; render.ui() lays out the interface for a song at a given second on a
+// transparent page, which out/scripts/dvd_render.py screenshots. No CRT look (the real tube does that, and its grain
+// would eat the disc's bitrate), no transitions, nothing plays by itself.
+if (RENDER) {
+  document.head.insertAdjacentHTML('beforeend', '<style>*, *::before, *::after { transition: none !important; animation: none !important; }</style>');
+  $('loading').hidden = true;
+  window.render = {
+    cars: CARS.map((c) => c.id),
+    songs: SONGS.map((s) => ({ title: s.title, car: s.car, file: s.file })),
+    async car({ car, yaw = HERO_YAW, x = 0, outCar = null, outYaw = HERO_YAW, outX = 0, quality = 0.95 }) {   // car null: empty studio
+      const a = car === null ? null : await loadCar(car), b = outCar === null ? null : await loadCar(outCar);
+      turntable.clear(); leaving.clear();
+      if (a) turntable.add(a);
+      if (b) leaving.add(b === a ? a.clone() : b);
+      contact.visible = !!a; contactOut.visible = !!b;
+      turntable.position.x = contact.position.x = x; turntable.rotation.y = contact.rotation.y = yaw;
+      leaving.position.x = contactOut.position.x = outX; leaving.rotation.y = contactOut.rotation.y = outYaw;
+      canvas.style.visibility = 'visible';
+      renderer.setRenderTarget(carLayer); renderer.render(scene, camera); renderer.setRenderTarget(null);
+      renderer.render(compositeScene, compositeCam);
+      return canvas.toDataURL('image/jpeg', quality);              // read before the browser shows the frame
+    },
+    // blank: no song details (slides between cars, list pages: the song isn't known there); playing: false shows
+    // "Play" (pause still); list: a Track List page, with page buttons (a disc remote can't turn pages with arrows)
+    ui({ song, pos = 0, length, level = '', pts = '', ring = 0, shuffle = false, repeat = false, playing = true, blank = false, list = null }) {
+      if (length) SONGS[song].length = length;                       // the disc audio's exact length
+      st.cur = song; st.pos = pos; st.mode = list === null ? 'player' : 'list'; st.playing = playing; st.ff = 1;
+      st.shuffle = shuffle; st.repeat = repeat;                       // the disc draws their on-state over the video
+      if (list !== null) { st.listPage = list; st.listHl = -1; }
+      refresh(); tickUI();
+      $('level').textContent = level; $('pts').textContent = pts;    // what the disc can show, decided by the script
+      $('lvlFill').style.strokeDashoffset = RING * (1 - ring);
+      for (const id of ['songTitle', 'songArtist', 'trackPill', 'elapsed', 'total', 'pts', 'prog', 'dots'])
+        $(id).style.visibility = blank ? 'hidden' : 'visible';
+      document.querySelectorAll('.list-row').forEach((r) => r.classList.remove('now', 'sel'));
+      $('pgPrev').hidden = $('pgNext').hidden = list === null;
+      $('cursor').style.display = 'none';                            // on the disc the cursor is the button highlight
+      canvas.style.visibility = 'hidden';
+      document.documentElement.style.background = document.body.style.background = 'transparent';
+    },
+  };
+}
+
+let last = performance.now();
+if (!RENDER) renderer.setAnimationLoop((now) => {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  let x = 0, xOut = 0;
+  const live = st.playing && (st.mode === 'player' || st.mode === 'showroom' || st.mode === 'list');
+  if (st.mode === 'arrive') {
+    const u = Math.max(0, Math.min(1, (now - st.arriveStart) / 1000 / ARRIVE_S));
+    const e = u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2;   // ease in, then ease out
+    x = SLIDE_GAP * (1 - e); xOut = -SLIDE_GAP * e;
+    const turn = Math.min(1, u / 0.4), d = Math.atan2(Math.sin(HERO_YAW - st.outYaw), Math.cos(HERO_YAW - st.outYaw));
+    leaving.rotation.y = contactOut.rotation.y = st.outYaw + d * turn * turn * (3 - 2 * turn);   // shortest way to the hero pose
+    if (!audio.paused) {                                             // the old song fades out
+      const v = Math.min(1, 1 - (now - st.fadeAt) / 1000 / SKIP_FADE_S);   // the frame's clock can be a hair behind fadeAt
+      if (v <= 0) audio.pause(); else audio.volume = st.fadeFrom * v * v;
+    }
+    if (u >= 1) { leaving.clear(); contactOut.visible = false; songStarted(); }
+  } else if (st.mode !== 'loading') {
+    const s = SONGS[st.cur];
+    if (live) {
+      const was = st.pos;
+      if (audio.getAttribute('src') && !audio.paused) st.pos = audio.currentTime;   // the real song sets the clock
+      else st.pos += dt * st.ff;
+      if (st.pos > was && st.pos - was < 5) addPoints(st.pos - was);            // a jump isn't listening
+      if (!audio.getAttribute('src') && st.pos >= s.length) songEnded();   // with audio, 'ended' does this
+    }
+    st.yaw = spinYaw(s, Math.min(st.pos, s.length));                 // the turntable follows the song: whole turns
+    const left = s.length - st.pos;                                  // and the song fades out over its last seconds
+    if (st.mode !== 'arrive') audio.volume = left < END_FADE_S ? Math.max(0, left / END_FADE_S) ** 2 : 1;
+  }
+  turntable.position.x = contact.position.x = x; turntable.rotation.y = contact.rotation.y = st.yaw;
+  leaving.position.x = contactOut.position.x = xOut;
+  stepCursor(now);
+  tickUI();
+  renderer.setRenderTarget(carLayer);
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+  bgUniforms.uTime.value = now / 1000;
+  renderer.render(compositeScene, compositeCam);
+});
+</script>
