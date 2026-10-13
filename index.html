@@ -18,6 +18,7 @@
   --rule: rgba(112, 110, 112, 0.7);   /* 2 px rules: 1 px lines flicker on an interlaced tube */
   --ok: #3daa6f;                      /* "Excellent" green, also the on-state of Shuffle and Repeat */
   --level: #e3197e;                   /* collector level ring */
+  --fav: #f2c14e;                     /* favourite star */
   --remote: #16181c;
   --font: "GT Helvetica", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-cond: "GT Helvetica Condensed", "Helvetica Neue Condensed", "Arial Narrow", sans-serif;   /* car names, PP pill, makes */
@@ -60,6 +61,11 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
 .flag.us { background: linear-gradient(#3c3b6e, #3c3b6e) 0 0 / 9px 7.5px no-repeat,
                        repeating-linear-gradient(#b22234 0 1.08px, #f3f3f3 1.08px 2.16px); }
 .flag.de { background: linear-gradient(#000 0 33.3%, #dd0000 33.3% 66.7%, #ffce00 66.7%); }
+.flag.it { background: linear-gradient(90deg, #009246 0 33.3%, #f3f3f3 33.3% 66.7%, #ce2b37 66.7%); }
+.flag.gb { background: linear-gradient(#c8102e, #c8102e) center / 100% 2.4px no-repeat, linear-gradient(#c8102e, #c8102e) center / 2.4px 100% no-repeat,
+                       linear-gradient(#f3f3f3, #f3f3f3) center / 100% 4.6px no-repeat, linear-gradient(#f3f3f3, #f3f3f3) center / 4.6px 100% no-repeat,
+                       linear-gradient(to bottom right, transparent 44%, #f3f3f3 44% 56%, transparent 56%),
+                       linear-gradient(to top right, transparent 44%, #f3f3f3 44% 56%, transparent 56%), #012169; }
 .p-make { font-family: var(--font-cond); font-size: 12.5px; font-weight: 700; letter-spacing: 0.01em; }
 .p-model { font-size: 16.5px; font-weight: 700; }
 .p-paint { font-size: 9.5px; font-weight: 600; color: #dadada; }
@@ -106,6 +112,19 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
 .list-row .g { width: 120px; color: var(--label); font-weight: 500; }
 .list-row .d { flex: 1; text-align: right; color: var(--label); font-variant-numeric: tabular-nums; }
 .list-row.now .t::before { content: "\266A  "; color: var(--ok); }
+.list-row .f { width: 14px; color: var(--fav); }
+.tabs { left: 196px; top: 95px; display: flex; gap: 6px; }
+.tab { margin: 0; font-family: var(--font-cond); height: 15px; padding: 0 9px; border: 1.5px solid #5c5c5c; border-radius: 10px;
+       font-size: 11px; font-weight: 700; line-height: 15px; color: #cfcfcf; }
+.tab.on { background: #d6d6d6; border-color: #d6d6d6; color: #111; }
+.fav-star { color: var(--fav); }
+
+/* car info (website only): a short history and the specs, over the turning car */
+.info-bg { left: 30px; top: 82px; width: 430px; height: 418px; border-radius: 4px; background: linear-gradient(90deg, rgba(5,5,5,0.9) 0 78%, rgba(5,5,5,0)); }
+.info-text { left: 46px; top: 198px; width: 325px; white-space: normal; font-size: 11.5px; font-weight: 500; line-height: 1.5; color: #d8d8d8; }
+.info-spec p { margin: 0; }
+.info-spec .l { font-size: 8.5px; font-weight: 500; color: var(--label); }
+.info-spec .v { margin-top: 3px; font-size: 12px; font-weight: 700; }
 
 /* remote (outside the TV picture) */
 .remote { position: fixed; width: 150px; padding: 14px 12px 12px; box-sizing: border-box; background: var(--remote); border: 1px solid #2a2d33;
@@ -121,8 +140,13 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
 .rb svg { width: 13px; height: 13px; fill: currentColor; }
 .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 8px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 5px; margin-top: 5px; }
+.row2b { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
 .keys { margin: 10px 0 0; font-size: 10px; line-height: 1.5; color: #7d828c; text-align: center; }
 .rb.music { width: 100%; margin-top: 8px; font-size: 11px; }
+.vol { display: flex; align-items: center; gap: 7px; margin-top: 9px; }
+.vol svg { width: 14px; height: 14px; flex: none; fill: currentColor; }
+.vol input { flex: 1; min-width: 0; margin: 0; accent-color: #9be37d; cursor: pointer; }
+.vol output { width: 22px; font-size: 10px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; color: #9aa0aa; }
 #musicMsg { margin-top: 6px; }
 </style>
 
@@ -141,8 +165,8 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
       <circle cx="13" cy="13" r="2.2" fill="#1b1b1b"/>
     </svg>
     <div class="a vsep" style="left:80px"></div>
-    <p class="a t-dim" style="left:88px;top:39px">Menu Book</p>
-    <p class="a" style="left:88px;top:55px;font-size:12px;color:#bdbdbd">---</p>
+    <p class="a t-dim" id="bookLabel" style="left:88px;top:39px">Menu Book</p>
+    <p class="a" id="bookValue" style="left:88px;top:55px;font-size:12px;color:#bdbdbd">---</p>
     <div class="a vsep" style="left:190px"></div>
     <p class="a song narrow" id="songTitle" style="left:200px;top:37px;font-size:13.5px;font-weight:700">Song title</p>
     <p class="a song narrow" id="songArtist" style="left:200px;top:53px;font-size:10px;font-weight:500;color:#cfcfcf">Artist name</p>
@@ -161,6 +185,7 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
     <p class="a num" id="total" style="right:46px;top:59px;font-size:8px;font-weight:600;color:#d6d6d6">/ 0:00</p>
   </div>
   <p class="a osd" id="osd" hidden>▶▶ ×8</p>
+  <p class="a osd" id="volOsd" style="top:108px" hidden></p>
 
   <!-- ===== left panel: the car ===== -->
   <div id="carUI">
@@ -201,10 +226,27 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
     <div class="a list-bg"></div>
     <h1 class="a p-title" style="left:46px;top:92px">Track List</h1>
     <p class="a num" id="listPage" style="right:46px;top:100px;font-size:10px;font-weight:600;color:var(--label)"></p>
+    <div class="a tabs" id="tabs"></div>
+    <p class="a" id="listEmpty" style="left:46px;top:140px;font-size:11px;font-weight:500;color:var(--label)" hidden>No favourites yet. Highlight a song and press ★ (S) to add it.</p>
     <div id="rows"></div>
     <!-- disc only (render mode): page buttons on the Back row -->
     <div class="a list-row" id="pgPrev" style="left:500px;width:100px;top:410px" hidden><span class="t">‹ Previous page</span></div>
     <div class="a list-row" id="pgNext" style="left:620px;width:100px;top:410px" hidden><span class="t">Next page ›</span></div>
+  </div>
+
+  <!-- ===== car info (website only): a short history and the specs ===== -->
+  <div id="infoUI" hidden>
+    <div class="a info-bg"></div>
+    <h1 class="a p-title" style="left:46px;top:92px">Car Info</h1>
+    <div class="a flag" id="infoFlag" style="left:46px;top:124px"></div>
+    <p class="a p-make" id="infoMake" style="left:72px;top:125.5px"></p>
+    <p class="a p-model" id="infoModel" style="left:46px;top:147px"></p>
+    <p class="a p-paint" id="infoMeta" style="left:46px;top:167px"></p>
+    <div class="a rule" style="top:187px;width:325px"></div>
+    <p class="a info-text" id="infoText"></p>
+    <div class="a rule" style="top:362px;width:325px"></div>
+    <div id="infoSpecs"></div>
+    <div class="a list-row sel" id="infoBack" style="top:470px;width:325px"><span class="n"></span><span class="t">Back</span></div>
   </div>
 
   <!-- ===== bottom: track dots + player menu ===== -->
@@ -240,10 +282,19 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
     <button type="button" class="rb on" data-k="crt" id="crtBtn" aria-pressed="true" aria-label="Retro TV look">CRT</button>
     <button type="button" class="rb" data-k="menu">MENU</button>
   </div>
+  <div class="row2b">
+    <button type="button" class="rb" data-k="fav" aria-label="Favourite">★</button>
+    <button type="button" class="rb" data-k="info">INFO</button>
+  </div>
+  <label class="vol" title="Volume (− / +)">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 5.5h3L8 2v12L4 10.5H1z"/><path d="M10.5 5a4 4 0 0 1 0 6M12.5 3a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <input type="range" id="volume" min="0" max="100" step="5" value="80" aria-label="Volume">
+    <output id="volNum" for="volume">80</output>
+  </label>
   <button type="button" class="rb music" id="musicBtn">Play my music…</button>
   <input type="file" id="musicPick" webkitdirectory multiple hidden>
   <p class="keys" id="musicMsg">Pick your music folder to hear the songs. Files stay on this computer.</p>
-  <p class="keys">Arrows · Enter<br>Space pause · F fast-fwd<br>PgUp / PgDn skip · M menu<br>C retro TV · L music</p>
+  <p class="keys">Arrows · Enter<br>Space pause · F fast-fwd<br>PgUp / PgDn skip · M menu<br>S favourite · I car info<br>− / + volume<br>C retro TV · L music</p>
 </div>
 
 <script type="importmap">
@@ -255,6 +306,8 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const RENDER = new URLSearchParams(location.search).has('render');   // frame capture for the disc, see the end
 
 // ------------------------------------------------------------------ the playlist (placeholders until the music is in the folder)
 const LENGTHS = [214, 187, 243, 201, 265, 198, 232, 176, 251, 209, 224, 190];
@@ -280,14 +333,121 @@ const CARS = [
     specs: spec('1,998 cc', 'FR', '473 BHP', '---', '1,150 kg', TB) },
   { id: 'ford_gt_lm', flag: 'us', make: 'FORD', model: 'GT LM Spec II Test Car', paint: 'White', tags: 'Racing Car / Le Mans',
     specs: spec('5,409 cc', 'MR', '592 BHP', '---', '1,150 kg', SC) },
+  // v2 cars (user 12 Oct), on the website and the disc v2
+  { id: 'jaguar_xj220', flag: 'gb', make: 'JAGUAR', model: "XJ220 '92", paint: 'Silver', tags: 'Road Car / Supercar',
+    specs: spec('3,498 cc', 'MR', '542 BHP / 7,200 rpm', '65.7 kgfm / 4,500 rpm', '1,470 kg', TB) },
+  { id: 'honda_nsx', flag: 'jp', make: 'HONDA', model: "NSX '90", paint: 'Silver', tags: 'Road Car / Coupe',
+    specs: spec('2,977 cc', 'MR', '276 BHP / 7,300 rpm', '30.0 kgfm / 5,400 rpm', '1,350 kg', NA) },
+  { id: 'mazda_mx5', flag: 'jp', make: 'MAZDA', model: "MX-5 Miata (NA) '89", paint: 'Red', tags: 'Road Car / Roadster',
+    specs: spec('1,597 cc', 'FR', '118 BHP / 6,500 rpm', '14.0 kgfm / 5,500 rpm', '940 kg', NA) },
+  { id: 'mazda_rx7', flag: 'jp', make: 'MAZDA', model: "RX-7 Type RS (FD) '99", paint: 'Yellow', tags: 'Road Car / Coupe',
+    specs: spec('1,308 cc', 'FR', '276 BHP / 6,500 rpm', '32.0 kgfm / 5,000 rpm', '1,280 kg', TB) },
+  { id: 'subaru_impreza', flag: 'jp', make: 'SUBARU', model: "Impreza Coupe Type R STi '99", paint: 'Blue', tags: 'Road Car / Coupe',
+    specs: spec('1,994 cc', '4WD', '276 BHP / 6,500 rpm', '36.0 kgfm / 4,000 rpm', '1,270 kg', TB) },
+  { id: 'lancia_delta', flag: 'it', make: 'LANCIA', model: "Delta HF Integrale Evo II '93", paint: 'White', tags: 'Road Car / Hatchback',
+    specs: spec('1,995 cc', '4WD', '212 BHP / 5,750 rpm', '32.0 kgfm / 2,500 rpm', '1,340 kg', TB) },
+  { id: 'fairlady_z', flag: 'jp', make: 'NISSAN', model: "Fairlady 240Z (S30) '71", paint: 'Red', tags: 'Road Car / Coupe',
+    specs: spec('2,393 cc', 'FR', '148 BHP / 5,600 rpm', '21.0 kgfm / 4,800 rpm', '1,010 kg', NA) },
 ];
-const FLAG_NAMES = { jp: 'Japan', us: 'United States', de: 'Germany' };
+const FLAG_NAMES = { jp: 'Japan', us: 'United States', de: 'Germany', gb: 'United Kingdom', it: 'Italy' };
+// Car Info page (website only, user 12 Oct): a short history of each car, in our own words. The page has room for
+// ten lines: keep each under about 95 words.
+const ABOUT = {
+  '787b': "The 787B was Mazda's last and greatest rotary race car. Its four-rotor R26B engine revved past 9,000 rpm, "
+    + 'and its scream carried right around the Circuit de la Sarthe. In 1991 the orange and green No. 55, driven by '
+    + 'Volker Weidler, Johnny Herbert and Bertrand Gachot, won the 24 Hours of Le Mans. It was the first win for a '
+    + 'Japanese maker, and it is still the only one for a car without pistons: new rules shut rotary engines out of '
+    + 'Le Mans from 1992.',
+  skyline_r32: 'In 1989 Nissan brought back the GT-R name after 16 years away. The R32 paired the RB26DETT, a 2.6-litre '
+    + 'twin-turbo straight six, with ATTESA E-TS all-wheel drive, which sent power to the front wheels only when the '
+    + 'rears began to slip. It was built to win Group A touring car racing, and in Japan it won all 29 championship '
+    + "races it entered. Australia's Wheels magazine nicknamed it Godzilla, and after two wins in the Bathurst 1000 "
+    + 'the name stuck for good.',
+  clk_gtr: "When the FIA GT Championship began in 1997, Mercedes-Benz and AMG needed a car to beat McLaren's F1 GTR, "
+    + 'and fast. The CLK-GTR went from a blank sheet of paper to its first test in just 128 days. Behind the cockpit '
+    + 'sat a 6-litre V12; the body only borrowed the look of the CLK road car. It won that first championship, with '
+    + "Bernd Schneider taking the drivers' title. To make it legal, Mercedes had to sell road versions, and only about "
+    + '25 were built.',
+  lancer_evo7: 'Every Lancer Evolution was a rally car for the road, and the seventh started over on the larger Lancer '
+    + 'Cedia body. It kept the 2-litre 4G63 turbo four and Active Yaw Control at the rear, and added an Active Center '
+    + 'Differential that shifts grip between the front and rear wheels, so the car turns in sharply and still puts its '
+    + 'power down. The GSR was the well-equipped road version; the lighter RS was left bare for people who wanted to '
+    + 'go racing. It arrived in 2001, at the height of the Mitsubishi and Subaru rivalry.',
+  gt_one: 'Toyota built the GT-One in Cologne with one goal: winning Le Mans outright. Its twin-turbo 3.6-litre V8 '
+    + 'made about 600 hp, and its long, low body looked more like a prototype than a GT car. In 1998 the leading car '
+    + 'broke its gearbox in the final hours. In 1999 the GT-Ones were the fastest cars there, but two crashed out, and '
+    + 'the last, driven by Ukyo Katayama, Keiichi Tsuchiya and Toshio Suzuki, was chasing the leading BMW when a '
+    + 'tyre burst. It finished second. Two road-legal versions were built to meet the GT1 rules.',
+  skyline_r34: 'The R34 was the last car to be called Skyline GT-R. It arrived in 1999, shorter and stiffer than the '
+    + 'R33, with the RB26DETT twin-turbo six: officially 280 PS under the Japanese makers\' agreement, but happy to give '
+    + 'far more. A screen on the dashboard showed boost, temperatures and g-forces, and was designed with help from '
+    + 'Polyphony Digital, the makers of Gran Turismo. The V-spec II added a carbon-fibre bonnet, and Bayside Blue '
+    + 'became the colour everyone remembers. Production ended in 2002, when new emissions rules arrived.',
+  castrol_supra: "In the late 1990s the All-Japan GT Championship (JGTC) was where Japan's makers fought with their "
+    + 'sports cars, and the white, red and green Castrol TOM\'S Supra was one of its stars. TOM\'S, Toyota\'s long-time '
+    + 'racing partner, turned the A80 Supra into a wide, light GT500 racer. In 1997 Pedro de la Rosa and Michael Krumm '
+    + "drove it to the GT500 drivers' title. It has been a Gran Turismo favourite since the PlayStation games.",
+  ford_gt_lm: 'Ford built the GT in 2004 to celebrate its own history: the GT40, which won Le Mans four years running '
+    + 'from 1966 to 1969. The road car had a supercharged 5.4-litre V8 behind the seats, about 550 hp, and an aluminium '
+    + 'body shaped after the original. Gran Turismo 4 imagined a Le Mans racing version, the LM Spec II, and this white '
+    + 'test car with Gran Turismo stickers is its development car.',
+  jaguar_xj220: "Jaguar's engineers built the first XJ220 in their spare time: a V12, four-wheel-drive concept shown in 1988. "
+    + 'Buyers queued with deposits, but the car that arrived in 1992 was smaller and lighter, with a 3.5-litre twin-turbo '
+    + 'V6 and rear-wheel drive, and some customers tried to back out. It was still a monster. It set a production-car lap '
+    + 'record at the Nürburgring, and at 212 mph it was the fastest production car in the world until the McLaren F1. '
+    + 'Gran Turismo 2 made it a dream car for a generation.',
+  honda_nsx: 'Honda set out to build a supercar you could drive every day. The NSX of 1990 had the first all-aluminium '
+    + 'body of any production car, a 3-litre VTEC V6 behind the seats, and a cockpit inspired by a fighter jet\'s canopy. '
+    + 'Ayrton Senna, then racing for McLaren-Honda, helped tune its chassis and famously asked for more stiffness after '
+    + 'testing it at Suzuka. It showed that a supercar could be easy to live with, and it stayed in production until 2005.',
+  mazda_mx5: 'The MX-5, sold in Japan as the Eunos Roadster, brought back the small, light, affordable two-seater just '
+    + 'as the old British roadsters had disappeared. Launched in 1989, it weighed under a tonne and had a 1.6-litre '
+    + 'twin-cam four, pop-up headlights and a short, sweet gearshift. Its engineers chased a feeling they called Jinba '
+    + 'Ittai: horse and rider as one. It became the best-selling two-seat sports car in history, and it has been in '
+    + 'every Gran Turismo.',
+  mazda_rx7: 'The third RX-7 arrived in 1991 as a pure sports car: low, curvy and light, with a 1.3-litre twin-rotor '
+    + 'engine and two turbochargers that worked in sequence, one at low revs and both at high. It was built until 2002, '
+    + 'ending with the Spirit R, and tuners loved it the whole way. So did Gran Turismo: an FD has been in every main '
+    + 'game since the first. This one wears the big adjustable rear wing of the final versions.',
+  subaru_impreza: 'The two-door Impreza WRX type R STi was the road-going tribute to the rally car that Colin McRae drove '
+    + "to the 1995 world title, built by Subaru's own tuning arm, Subaru Tecnica International. Lighter and stiffer than "
+    + 'the four-door, it had a turbocharged 2-litre flat four and all-wheel drive. The Version VI of 1999 was the last of '
+    + 'the first-generation STi cars, and in blue with gold wheels it looked like the rally car on the road.',
+  lancia_delta: 'No rally car has won as much as the Lancia Delta. From 1987 to 1992 it took six World Rally '
+    + "Championship makers' titles in a row, growing wider and wilder each year, from the HF 4WD to the Integrale and "
+    + 'the Evoluzione. The road cars existed so the rally cars could, and the Evo II of 1993 was the last and most '
+    + 'powerful, with a 2-litre turbo four and permanent four-wheel drive. This white road car wears Martini Racing '
+    + "lettering, a nod to the rally cars' famous colours.",
+  fairlady_z: "Nissan's Fairlady Z of 1969, sold abroad as the Datsun 240Z, gave the world a good-looking six-cylinder "
+    + 'sports car at an affordable price. Its long bonnet and fastback looked European, but it was reliable and cheap to '
+    + 'run, and it sold in huge numbers in America. Gran Turismo has kept the early Z among its classics since the '
+    + 'second game. This one sits on deep-dish wheels, the classic Japanese way to dress up an S30.',
+};
 // the playlist: playlist.json is made from playlist.csv by out/scripts/make_playlist.py
+// the songs share the cars out in turn: song i shows car i mod 15 (the disc too, v2; playlist.csv's 8-car column
+// was the disc v1's)
 const SONGS = await fetch('playlist.json').then((r) => r.json()).then((list) =>
-  list.map((s) => ({ ...s, car: Math.max(0, CARS.findIndex((c) => c.id === s.car)) }))
+  list.map((s, i) => ({ ...s, car: i % CARS.length }))
 ).catch(() => LENGTHS.map((length, i) => ({ title: `Song title ${i + 1}`, artist: 'Artist name', game: '—', length, car: i % CARS.length, file: '' })));
 const N = SONGS.length;
 const PAGE = 12;                                   // track list rows per page (one DVD menu per page)
+// Track List filters (website only, user 12 Oct). The filter is also what plays next; shop jingles are their own group.
+const kindOf = (s) => /^shop\b/i.test(s.title) ? 'shop' : String(s.game).toLowerCase();
+// The disc has the first four tabs; favourites need memory a DVD player doesn't have.
+const FILTERS = [{ id: 'all', tab: 'All', name: 'All Songs' }, { id: 'gt5', tab: 'GT5', name: 'GT5' }, { id: 'gt6', tab: 'GT6', name: 'GT6' },
+  { id: 'shop', tab: 'Shop', name: 'Shop Music' }, ...(RENDER ? [] : [{ id: 'fav', tab: '★ Favourites', name: 'Favourites' }])];
+// favourites, by file name, kept in this browser; a private window or blocked storage just starts with none
+const FAV_KEY = 'gt-music-player.favourites';
+const songKey = (s) => s.file || `${s.title}|${s.artist}`;
+const favs = new Set();
+try { if (!RENDER) for (const k of JSON.parse(localStorage.getItem(FAV_KEY) || '[]')) favs.add(k); } catch {}
+const isFav = (k) => favs.has(songKey(SONGS[k]));
+function toggleFav(k) {
+  const key = songKey(SONGS[k]);
+  if (!favs.delete(key)) favs.add(key);
+  try { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); } catch {}
+}
+const viewOf = (f) => [...Array(N).keys()].filter((k) => f === 'all' || (f === 'fav' ? isFav(k) : kindOf(SONGS[k]) === f));
 
 // ------------------------------------------------------------------ frame and 3D constants
 const W = 768, H = 576, FRAME_ASPECT = 4 / 3;     // square-pixel PAL frame
@@ -452,7 +612,7 @@ const camera = new THREE.PerspectiveCamera(28, FRAME_ASPECT, 0.1, 200);
 const frame = document.getElementById('frame'), remote = document.getElementById('remote');
 function layout() {
   const w = window.innerWidth, h = window.innerHeight;
-  const RW = 150, RH = 430, GAP = 16;
+  const RW = 150, RH = 505, GAP = 16;
   let boxW = Math.min(w, h * FRAME_ASPECT);
   const fitBeside = Math.min(boxW, w - 2 * (RW + 2 * GAP));       // shrink the picture a little to make room for the remote
   let x0, y0, rx = null, ry = null;
@@ -504,7 +664,9 @@ const $ = (id) => document.getElementById(id);
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const pad2 = (n) => String(n).padStart(2, '0');
 
-const ITEM_X = [84, 184, 284, 384, 484, 584, 684], ICON_Y = 474, LABEL_Y = 521;
+const ITEMS = ['prev', 'play', 'next', 'shuffle', 'list', 'info', 'showroom', 'repeat'];   // also the disc's 8 buttons (v2)
+const ITEM_STEP = ITEMS.length > 7 ? 90 : 100;      // seven items would sit at 84 … 684 (disc v1)
+const ITEM_X = ITEMS.map((_, i) => 384 + (i - (ITEMS.length - 1) / 2) * ITEM_STEP), ICON_Y = 474, LABEL_Y = 521;
 const ICONS = {
   prev: '<path d="M8 8h3.4v24H8zM32 8 13 20l19 12z"/>',
   play: '<path d="M11 7l22 13-22 13z"/>',
@@ -514,9 +676,9 @@ const ICONS = {
   list: '<g fill="currentColor"><rect x="6" y="9" width="5" height="5" rx="1"/><rect x="6" y="18" width="5" height="5" rx="1"/><rect x="6" y="27" width="5" height="5" rx="1"/><rect x="14" y="10" width="20" height="3" rx="1"/><rect x="14" y="19" width="20" height="3" rx="1"/><rect x="14" y="28" width="20" height="3" rx="1"/></g>',
   showroom: '<g fill="currentColor"><path d="M8 22.5c.6-2.6 2-4 4.4-4.6l3.6-3.4c1-.9 2.2-1.4 3.6-1.4h5.2c1.3 0 2.4.5 3.2 1.5l2.6 3.2c1.6.5 2.6 1.6 2.9 3.2v2.8H8z"/><circle cx="13.5" cy="25" r="2.6"/><circle cx="27.5" cy="25" r="2.6"/></g><ellipse cx="20" cy="29.5" rx="15" ry="4" fill="none" stroke="currentColor" stroke-width="2.4"/>',
   repeat: '<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21v-4a5 5 0 0 1 5-5h17M31 19v4a5 5 0 0 1-5 5H9"/><path d="M27 8l4 4-4 4M13 24l-4 4 4 4"/></g>',
+  info: '<circle cx="20" cy="20" r="13" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="20" cy="13.2" r="2.2"/><rect x="18.4" y="17.4" width="3.2" height="10.4" rx="1"/>',
 };
-const ITEMS = ['prev', 'play', 'next', 'shuffle', 'list', 'showroom', 'repeat'];
-const LABELS = { prev: 'Previous', play: 'Play', next: 'Next', shuffle: 'Shuffle', list: 'Track List', showroom: 'Showroom', repeat: 'Repeat' };
+const LABELS = { prev: 'Previous', play: 'Play', next: 'Next', shuffle: 'Shuffle', list: 'Track List', info: 'Car Info', showroom: 'Showroom', repeat: 'Repeat' };
 $('items').innerHTML = ITEMS.map((id, i) => `
   <svg class="a m-icon" id="ic-${id}" style="left:${ITEM_X[i] - 20}px;top:${ICON_Y}px;color:#fff" viewBox="0 0 40 40" fill="currentColor" aria-hidden="true">${ICONS[id]}</svg>
   <p class="a c m-label" id="lb-${id}" style="left:${ITEM_X[i]}px;top:${LABEL_Y}px">${LABELS[id]}</p>`).join('');
@@ -547,35 +709,38 @@ function showDots() {
     }
   }
 }
-// track list: twelve rows per page plus Back; on the disc each page is its own menu
-const PAGES = Math.ceil(N / PAGE);
+// track list: twelve rows per page plus Back; on the disc each page is its own menu. On the website the filter tabs
+// sit on the title line and a ★ column marks favourites; the disc's pages have neither.
 const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 $('rows').innerHTML = Array.from({ length: PAGE }, (_, i) =>
-  `<div class="a list-row" id="slot${i}" style="top:${128 + i * 23}px"><span class="n"></span><span class="t"></span><span class="ar"></span><span class="g"></span><span class="d"></span></div>`).join('')
+  `<div class="a list-row" id="slot${i}" style="top:${128 + i * 23}px"><span class="n"></span>${RENDER ? '' : '<span class="f"></span>'}<span class="t"></span><span class="ar"></span><span class="g"></span><span class="d"></span></div>`).join('')
   + `<div class="a list-row" id="slotBack" style="top:${128 + PAGE * 23 + 6}px"><span class="n"></span><span class="t">Back</span></div>`;
-let shownPage = -1;
-function showListPage(p) {
-  if (p === shownPage) return;
-  shownPage = p;
+$('tabs').innerHTML = FILTERS.map((f) => `<p class="tab" id="tab-${f.id}">${f.tab}</p>`).join('');
+function showListPage(p, view) {                    // view: the filtered songs
   for (let i = 0; i < PAGE; i++) {
-    const k = p * PAGE + i, row = $(`slot${i}`), s = SONGS[k];
+    const k = view[p * PAGE + i], row = $(`slot${i}`), s = SONGS[k];
     row.hidden = !s;
     if (!s) continue;
-    const [n, t, ar, g, d] = row.children;
-    n.textContent = pad2(k + 1); t.textContent = s.title; ar.textContent = s.artist; g.textContent = s.game; d.textContent = fmt(s.length);
+    const q = (c) => row.querySelector(c);
+    q('.n').textContent = pad2(k + 1); q('.t').textContent = s.title; q('.ar').textContent = s.artist; q('.d').textContent = fmt(s.length);
+    q('.g').textContent = !RENDER && kindOf(s) === 'shop' ? `${s.game} Shop` : s.game;
+    if (!RENDER) q('.f').textContent = isFav(k) ? '★' : '';
   }
-  $('listPage').textContent = PAGES > 1 ? `Page ${p + 1} / ${PAGES}` : '';
+  const pages = Math.ceil(view.length / PAGE), page = pages > 1 ? `Page ${p + 1} / ${pages}` : '';
+  $('listPage').textContent = RENDER ? page : `${view.length} song${view.length === 1 ? '' : 's'}${page ? ' · ' + page : ''}`;
+  $('listEmpty').hidden = view.length > 0;
 }
 
 // ------------------------------------------------------------------ player state (everything here maps to something a DVD can do)
 const st = {
-  mode: 'loading',          // loading | arrive | player | list | showroom
+  mode: 'loading',          // loading | arrive | player | list | showroom | info
   cur: Math.floor(Math.random() * N),   // the disc starts on a random song
   pos: 0, playing: true, ff: 1,
   points: 0,                // Collector Level points (seconds of music played this session)
   shuffle: true, repeat: false,
   hl: 1,                    // highlighted menu item; starts on Play
-  listHl: 0, listPage: 0,
+  filter: 'all',            // Track List filter, also what plays next (FILTERS)
+  listRow: 'tabs', listPage: 0,   // Track List cursor: 'tabs', 'back' or a song's place in the filtered list
   history: [],
   recentCars: [],           // the last RECENT_CARS cars shown, newest last
   arriveStart: 0, yaw: HERO_YAW,
@@ -589,19 +754,36 @@ const audio = new Audio();
 audio.preload = 'auto';
 const audioURLs = new Map();                       // file name (lower case) -> local object URL
 const songURL = (k) => audioURLs.get((SONGS[k].file || '').toLowerCase());
+// volume: the slider on the remote, or − / +, kept in this browser. Squared, so the slider feels even to the ear;
+// the songs' fades multiply it.
+const VOL_KEY = 'gt-music-player.volume';
+let volume = 80, volTimer = 0;
+try { const v = localStorage.getItem(VOL_KEY); if (v !== null && Number(v) >= 0 && Number(v) <= 100) volume = Number(v); } catch {}
+const gain = () => (volume / 100) ** 2;
+function setVolume(v, osd = false) {
+  volume = Math.max(0, Math.min(100, Math.round(v / 5) * 5));
+  $('volume').value = volume; $('volNum').textContent = volume;
+  try { localStorage.setItem(VOL_KEY, String(volume)); } catch {}
+  if (!osd) return;                                // keys: show it in the picture for a moment
+  $('volOsd').textContent = volume ? `Volume ${volume}` : 'Muted';
+  $('volOsd').hidden = false;
+  clearTimeout(volTimer); volTimer = setTimeout(() => { $('volOsd').hidden = true; }, 1200);
+}
+setVolume(volume);
+$('volume').addEventListener('input', (e) => setVolume(Number(e.target.value)));
 function startAudio() {                            // load the current song's file and line it up with the player
   const url = songURL(st.cur);
   if (!url) { audio.pause(); audio.removeAttribute('src'); return; }
   if (audio.src !== url) audio.src = url;
   audio.currentTime = st.pos;
-  audio.volume = 1;
+  audio.volume = gain();
   syncAudio();
 }
 function syncAudio() {                             // follow the player: play, pause, silent fast-forward
   if (!audio.getAttribute('src') || st.mode === 'arrive') return;   // during a song change the old song is fading out
   audio.playbackRate = st.ff;
   audio.muted = st.ff > 1;
-  const run = st.playing && (st.mode === 'player' || st.mode === 'showroom' || st.mode === 'list');
+  const run = st.playing && (st.mode === 'player' || st.mode === 'showroom' || st.mode === 'list' || st.mode === 'info');
   if (run && audio.paused) {
     if (Math.abs(audio.currentTime - st.pos) > 0.5) audio.currentTime = st.pos;   // catch up if the clock ran silently
     audio.play().catch(() => {});                  // browsers block sound until the first click or key press
@@ -618,9 +800,11 @@ if (LOCAL) for (const s of SONGS) if (s.path) audioURLs.set(s.file.toLowerCase()
 // In playlist order the cars already take turns (playlist.csv rotates all 8). On the disc: the last three car ids
 // sit in GPRMs, the car of song k is k mod 8, and random() is drawn again until it is none of them.
 const RECENT_CARS = 3;
+// On the website the Track List filter limits what plays next (an empty filter, no favourites yet, plays everything).
 function pickNext() {
-  if (!st.shuffle) return (st.cur + 1) % N;
-  const songs = [...Array(N).keys()].filter((k) => k !== st.cur || N === 1);
+  const set = viewOf(st.filter).length ? viewOf(st.filter) : viewOf('all');
+  if (!st.shuffle) return set.find((k) => k > st.cur) ?? set[0];
+  const songs = set.filter((k) => k !== st.cur || set.length === 1);
   const fresh = songs.filter((k) => !st.recentCars.includes(SONGS[k].car));
   const pool = fresh.length ? fresh : songs;        // fewer than 4 cars in the playlist: just avoid the same song
   return pool[Math.floor(Math.random() * pool.length)];
@@ -664,7 +848,11 @@ function activate(id) {
   else if (id === 'next') goTo(pickNext());
   else if (id === 'shuffle') { st.shuffle = !st.shuffle; refresh(); }
   else if (id === 'repeat') { st.repeat = !st.repeat; refresh(); }
-  else if (id === 'list') { st.mode = 'list'; st.listHl = st.cur; st.listPage = Math.floor(st.cur / PAGE); refresh(); }
+  else if (id === 'list') {                       // opens on the song playing, when it's in the filter
+    const view = viewOf(st.filter), at = view.indexOf(st.cur);
+    st.mode = 'list'; st.listRow = at >= 0 ? at : view.length ? 0 : 'tabs'; st.listPage = Math.max(0, Math.floor(at / PAGE)); refresh();
+  }
+  else if (id === 'info') { st.mode = 'info'; refresh(); }
   else if (id === 'showroom') { st.mode = 'showroom'; refresh(); }
 }
 function setRetro(on) {                          // preview-only look switch (not a disc button)
@@ -674,27 +862,57 @@ function setRetro(on) {                          // preview-only look switch (no
   $('crtBtn').classList.toggle('on', on);
   $('crtBtn').setAttribute('aria-pressed', String(on));
 }
+function setFilter(id) {                         // the list opens on the page with the song playing, if it's there
+  st.filter = id;
+  st.listPage = Math.max(0, Math.floor(viewOf(id).indexOf(st.cur) / PAGE));
+}
+function fitListRow() {                          // a favourite left the Favourites list: keep the cursor on a real row
+  const V = viewOf(st.filter).length;
+  if (typeof st.listRow === 'number') st.listRow = V ? Math.min(st.listRow, V - 1) : 'back';
+  st.listPage = typeof st.listRow === 'number' ? Math.floor(st.listRow / PAGE) : Math.min(st.listPage, Math.max(0, Math.ceil(V / PAGE) - 1));
+}
 function press(k) {
   flashRemote(k);
   if (k === 'crt') { setRetro(bgUniforms.uRetro.value < 0.5); return; }
+  if (k === 'volup' || k === 'voldown') { setVolume(volume + (k === 'volup' ? 10 : -10), true); return; }
   if (k === 'music') { $('musicPick').click(); return; }
   if (st.mode === 'loading' || st.mode === 'arrive') return;          // transitions have no buttons
   if (st.mode === 'showroom') { st.mode = 'player'; refresh(); return; }
+  if (k === 'fav') {                              // ★: the highlighted Track List song, otherwise the one playing
+    const row = st.listRow, list = st.mode === 'list' && typeof row === 'number';
+    toggleFav(list ? viewOf(st.filter)[row] : st.cur);
+    if (st.mode === 'list') fitListRow();
+    refresh(); return;
+  }
+  if (k === 'info') { st.mode = st.mode === 'info' ? 'player' : 'info'; refresh(); return; }
   if (k === 'pause') { st.playing = !st.playing; st.ff = 1; refresh(); return; }
   if (k === 'ff') { st.ff = st.ff === 1 ? 8 : 1; st.playing = true; refresh(); return; }
   if (k === 'next') { goTo(pickNext()); return; }
   if (k === 'prev') { activate('prev'); return; }
-  if (st.mode === 'list') {                       // ↑↓ rows (Back sits under each page), ←→ pages
-    const first = st.listPage * PAGE, last = Math.min(N, first + PAGE) - 1;
-    if (k === 'down') st.listHl = st.listHl === N ? first : st.listHl === last ? N : st.listHl + 1;
-    else if (k === 'up') st.listHl = st.listHl === N ? last : st.listHl === first ? N : st.listHl - 1;
-    else if (k === 'left' || k === 'right') {
-      const p = (st.listPage + (k === 'right' ? 1 : PAGES - 1)) % PAGES, slot = st.listHl === N ? 0 : st.listHl - first;
-      st.listPage = p; st.listHl = Math.min(p * PAGE + slot, Math.min(N, (p + 1) * PAGE) - 1);
+  if (st.mode === 'info') {                       // only Back here
+    if (k === 'enter' || k === 'menu') st.mode = 'player';
+    refresh(); return;
+  }
+  if (st.mode === 'list') {                       // ↑↓ filter tabs, rows, Back; ←→ filters (on the tabs) or pages
+    const view = viewOf(st.filter), V = view.length, pages = Math.max(1, Math.ceil(V / PAGE));
+    const first = st.listPage * PAGE, last = Math.min(V, first + PAGE) - 1, r = st.listRow;
+    if (k === 'down') st.listRow = r === 'tabs' ? (V ? first : 'back') : r === 'back' ? 'tabs' : r === last ? 'back' : r + 1;
+    else if (k === 'up') st.listRow = r === 'tabs' ? 'back' : r === 'back' ? (V ? last : 'tabs') : r === first ? 'tabs' : r - 1;
+    else if ((k === 'left' || k === 'right') && r === 'tabs') {
+      const i = FILTERS.findIndex((f) => f.id === st.filter);
+      setFilter(FILTERS[(i + (k === 'right' ? 1 : FILTERS.length - 1)) % FILTERS.length].id);
+    }
+    else if ((k === 'left' || k === 'right') && V) {
+      const p = (st.listPage + (k === 'right' ? 1 : pages - 1)) % pages, slot = r === 'back' ? 0 : r - first;
+      st.listPage = p; st.listRow = Math.min(p * PAGE + slot, Math.min(V, (p + 1) * PAGE) - 1);
     }
     else if (k === 'menu') st.mode = 'player';
-    else if (k === 'enter') { if (st.listHl === N) st.mode = 'player'; else { goTo(st.listHl); return; } }
-    if (st.listHl < N) st.listPage = Math.floor(st.listHl / PAGE);
+    else if (k === 'enter') {
+      if (r === 'back') st.mode = 'player';
+      else if (r === 'tabs') st.listRow = V ? first : 'back';
+      else { goTo(view[r]); return; }
+    }
+    if (typeof st.listRow === 'number') st.listPage = Math.floor(st.listRow / PAGE);
     refresh(); return;
   }
   if (k === 'left') st.hl = (st.hl + ITEMS.length - 1) % ITEMS.length;
@@ -713,12 +931,21 @@ function showCarInfo(c) {                         // left panel: the current son
   $('carTags').textContent = c.tags;
   $('carSpecs').innerHTML = c.specs.map(([k, v], i) =>
     `<div class="a spec" style="top:${230.2 + i * 19}px"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  // the Car Info page: history, then the specs in two columns
+  $('infoFlag').className = `a flag ${c.flag}`;
+  $('infoMake').textContent = c.make;
+  $('infoModel').textContent = c.model;
+  $('infoMeta').textContent = `${FLAG_NAMES[c.flag]} · ${c.tags}`;
+  $('infoText').textContent = ABOUT[c.id] || '';
+  $('infoSpecs').innerHTML = c.specs.map(([k, v], i) =>
+    `<div class="a info-spec" style="left:${46 + (i % 2) * 175}px;top:${374 + Math.floor(i / 2) * 28}px"><p class="l">${k}</p><p class="v">${v}</p></div>`).join('');
 }
 let shownCar = -1;
 function refresh() {
   const s = SONGS[st.cur], mode = st.mode;
   if (s.car !== shownCar) { shownCar = s.car; showCarInfo(CARS[s.car]); }
-  $('songTitle').textContent = s.title;
+  $('songTitle').innerHTML = (!RENDER && isFav(st.cur) ? '<span class="fav-star">★</span> ' : '') + esc(s.title);
+  if (!RENDER) $('bookValue').textContent = FILTERS.find((f) => f.id === st.filter).name;
   $('songArtist').textContent = `${s.artist}${s.game !== '—' ? ' · ' + s.game : ''}`;
   $('trackPill').textContent = `${pad2(st.cur + 1)} / ${pad2(N)}`;
   $('total').textContent = `/ ${fmt(s.length)}`;
@@ -733,27 +960,37 @@ function refresh() {
   }
   const showUI = mode !== 'showroom';
   $('topUI').hidden = !showUI;
-  $('carUI').hidden = !showUI || mode === 'list';
-  $('menuUI').hidden = !showUI || mode === 'list';
+  $('carUI').hidden = !showUI || mode === 'list' || mode === 'info';
+  $('menuUI').hidden = !showUI || mode === 'list' || mode === 'info';
   $('listUI').hidden = mode !== 'list';
+  $('infoUI').hidden = mode !== 'info';
   $('osd').hidden = !(st.ff > 1 && showUI);
   if (mode === 'list') {
-    showListPage(st.listPage);
+    const view = viewOf(st.filter);
+    showListPage(st.listPage, view);
     for (let i = 0; i < PAGE; i++) {
-      const k = st.listPage * PAGE + i;
-      $(`slot${i}`).classList.toggle('sel', k === st.listHl);
-      $(`slot${i}`).classList.toggle('now', k === st.cur);
+      const at = st.listPage * PAGE + i;
+      $(`slot${i}`).classList.toggle('sel', at === st.listRow);
+      $(`slot${i}`).classList.toggle('now', view[at] === st.cur);
     }
-    $('slotBack').classList.toggle('sel', st.listHl === N);
+    $('slotBack').classList.toggle('sel', st.listRow === 'back');
+    for (const f of FILTERS) $(`tab-${f.id}`).classList.toggle('on', f.id === st.filter);
   }
   syncAudio();
   // the cursor sits on the highlighted menu item, or on the highlighted row of the track list;
   // the tip sits on the centre of the highlighted icon, as in the reference (or at the start of the list row)
-  const shown = mode === 'player' || mode === 'list';
+  const shown = mode === 'player' || mode === 'list' || mode === 'info';
   $('cursor').style.display = shown ? 'block' : 'none';
   if (shown) {
-    const slot = st.listHl === N ? PAGE : st.listHl - st.listPage * PAGE;
-    const [x, y] = mode === 'list' ? [32, 128 + slot * 23 + (st.listHl === N ? 6 : 0) + 9] : [ITEM_X[st.hl] - 2, ICON_Y + 20 - 2];
+    let x = ITEM_X[st.hl] - 2, y = ICON_Y + 20 - 2;
+    if (mode === 'info') [x, y] = [32, 470 + 9];   // its only button: Back
+    else if (mode === 'list' && st.listRow === 'tabs') {
+      const t = $(`tab-${st.filter}`);
+      [x, y] = [196 + t.offsetLeft + t.offsetWidth / 2 - 2, 95 + 14];   // tip on the tab's lower edge, clear of its text
+    } else if (mode === 'list') {
+      const back = st.listRow === 'back', slot = back ? PAGE : st.listRow - st.listPage * PAGE;
+      [x, y] = [32, 128 + slot * 23 + (back ? 6 : 0) + 9];
+    }
     moveCursor(x, y, mode !== cursorGlide.mode);   // jumping between the menu and the list is instant
     cursorGlide.mode = mode;
   } else cursorGlide.mode = '';
@@ -828,9 +1065,11 @@ $('musicPick').addEventListener('change', (e) => {
   e.target.value = '';
 });
 const KEYMAP = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'enter',
-  ' ': 'pause', PageDown: 'next', PageUp: 'prev', n: 'next', p: 'prev', f: 'ff', F: 'ff', m: 'menu', M: 'menu', Escape: 'menu', c: 'crt', C: 'crt', l: 'music', L: 'music' };
+  ' ': 'pause', PageDown: 'next', PageUp: 'prev', n: 'next', p: 'prev', f: 'ff', F: 'ff', m: 'menu', M: 'menu', Escape: 'menu', c: 'crt', C: 'crt', l: 'music', L: 'music',
+  s: 'fav', S: 'fav', '*': 'fav', i: 'info', I: 'info', '-': 'voldown', _: 'voldown', '=': 'volup', '+': 'volup' };
 window.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) return;
+  if (e.target.tagName === 'INPUT') return;          // the volume slider takes its own arrow keys
   const k = KEYMAP[e.key];
   if (!k) return;
   e.preventDefault();
@@ -838,8 +1077,8 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ------------------------------------------------------------------ start
-const RENDER = new URLSearchParams(location.search).has('render');   // frame capture for the disc, see the end
 setRetro(!RENDER);
+if (!RENDER) $('bookLabel').textContent = 'Playlist';
 if (LOCAL) {
   $('musicMsg').textContent = 'Songs play from your music folder. Click or press a key once to turn the sound on.';
   const unlock = () => { syncAudio(); window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock); };
@@ -905,13 +1144,26 @@ if (RENDER) {
       renderer.render(compositeScene, compositeCam);
       return canvas.toDataURL('image/jpeg', quality);              // read before the browser shows the frame
     },
+    filters: FILTERS.map((f) => f.id),
+    // songs in each filter, as numbers from 1 (the disc's tabs are ranges of the playlist)
+    filterSongs: () => Object.fromEntries(FILTERS.map((f) => [f.id, viewOf(f.id).map((k) => k + 1)])),
+    // the cursor tip on each tab (design grid), as the page's own cursor places it
+    tabTips() {
+      const was = $('listUI').hidden; $('listUI').hidden = false;
+      const tips = FILTERS.map((f) => { const t = $(`tab-${f.id}`); return [196 + t.offsetLeft + t.offsetWidth / 2, 95 + 16]; });
+      $('listUI').hidden = was;
+      return tips;
+    },
     // blank: no song details (slides between cars, list pages: the song isn't known there); playing: false shows
-    // "Play" (pause still); list: a Track List page, with page buttons (a disc remote can't turn pages with arrows)
-    ui({ song, pos = 0, length, level = '', pts = '', ring = 0, shuffle = false, repeat = false, playing = true, blank = false, list = null }) {
+    // "Play" (pause still); list: a Track List page of a filter's songs, with page buttons (a disc remote can't
+    // turn pages with arrows); info: the Car Info page of the song's car
+    ui({ song, pos = 0, length, level = '', pts = '', ring = 0, shuffle = false, repeat = false, playing = true, blank = false, list = null,
+         filter = 'all', info = false }) {
       if (length) SONGS[song].length = length;                       // the disc audio's exact length
-      st.cur = song; st.pos = pos; st.mode = list === null ? 'player' : 'list'; st.playing = playing; st.ff = 1;
+      st.cur = song; st.pos = pos; st.mode = info ? 'info' : list === null ? 'player' : 'list'; st.playing = playing; st.ff = 1;
       st.shuffle = shuffle; st.repeat = repeat;                       // the disc draws their on-state over the video
-      if (list !== null) { st.listPage = list; st.listHl = -1; }
+      st.filter = filter;
+      if (list !== null) { st.listPage = list; st.listRow = 'back'; }
       refresh(); tickUI();
       $('level').textContent = level; $('pts').textContent = pts;    // what the disc can show, decided by the script
       $('lvlFill').style.strokeDashoffset = RING * (1 - ring);
@@ -930,7 +1182,7 @@ let last = performance.now();
 if (!RENDER) renderer.setAnimationLoop((now) => {
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   let x = 0, xOut = 0;
-  const live = st.playing && (st.mode === 'player' || st.mode === 'showroom' || st.mode === 'list');
+  const live = st.playing && (st.mode === 'player' || st.mode === 'showroom' || st.mode === 'list' || st.mode === 'info');
   if (st.mode === 'arrive') {
     const u = Math.max(0, Math.min(1, (now - st.arriveStart) / 1000 / ARRIVE_S));
     const e = u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2;   // ease in, then ease out
@@ -953,7 +1205,7 @@ if (!RENDER) renderer.setAnimationLoop((now) => {
     }
     st.yaw = spinYaw(s, Math.min(st.pos, s.length));                 // the turntable follows the song: whole turns
     const left = s.length - st.pos;                                  // and the song fades out over its last seconds
-    if (st.mode !== 'arrive') audio.volume = left < END_FADE_S ? Math.max(0, left / END_FADE_S) ** 2 : 1;
+    if (st.mode !== 'arrive') audio.volume = gain() * (left < END_FADE_S ? Math.max(0, left / END_FADE_S) ** 2 : 1);
   }
   turntable.position.x = contact.position.x = x; turntable.rotation.y = contact.rotation.y = st.yaw;
   leaving.position.x = contactOut.position.x = xOut;

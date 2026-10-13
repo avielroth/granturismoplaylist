@@ -38,6 +38,42 @@ made smaller (1024 px, WebP) for the preview; rendered in a studio scene.
   https://sketchfab.com/3d-models/nissan-skyline-r34-gtr-2002-wwwvecarzcom-03907515f2e24316b6fefa3ebdd4dd0a
   Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 
+Website only (v2):
+
+- "FREE Lancia Delta HF Integrale evo 2" by TARANTULA (https://sketchfab.com/begemot.988888)
+  https://sketchfab.com/3d-models/free-lancia-delta-hf-integrale-evo-2-85614131e0dc4613a948472aaa935fc7
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Also: paint made non-metallic, number plates removed
+
+- "Honda NSX 1990" by Lexyc16 (https://sketchfab.com/Lexyc16)
+  https://sketchfab.com/3d-models/honda-nsx-1990-1cc15628a00a4739a6b6c01128927c8d
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+- "Jaguar XJ220 1991" by Comrade1280 (https://sketchfab.com/comrade1280)
+  https://sketchfab.com/3d-models/jaguar-xj220-1991-d99bb7b0fc0e4e3c9553246679dd067f
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Also: floor plane removed, body repainted silver (the download had lost its paint colour), windows made clearer,
+  front wheels turned straight
+
+- "Mazda Miata MX-5 NA" by Lexyc16 (https://sketchfab.com/Lexyc16)
+  https://sketchfab.com/3d-models/mazda-miata-mx-5-na-d51fcd44b74f4daf8012c41e0400c041
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+  Also: paint made glossier
+
+- "Mazda RX-7 FD" by Lexyc16 (https://sketchfab.com/Lexyc16)
+  https://sketchfab.com/3d-models/mazda-rx-7-fd-d35ff630df614771b82e7b2f59035b1e
+  Licence: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+- "Nissan Fairlady Z S30(240Z) 1978" by Lexyc16 (https://sketchfab.com/Lexyc16)
+  https://sketchfab.com/3d-models/nissan-fairlady-z-s30240z-1978-0d9286ebb8cc426e993e1d398b874a34
+  Licence: CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+
+- "Subaru Impreza Coupe WRX Type R STi" by vecarz (https://sketchfab.com/heynic)
+  https://sketchfab.com/3d-models/subaru-impreza-coupe-wrx-type-r-sti-757ef77568f54339aa524d3b03437890
+  Licence: CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
+  Also: polygon count reduced to 30 %, one side window's green glass and the rear-window heater lines darkened.
+  This changed version is shared under the same licence.
+
 MUSIC (not included: the player plays your own copies, see README.md)
 104 tracks from Gran Turismo 5 (Original Game Soundtrack) and Gran Turismo 6.
 
