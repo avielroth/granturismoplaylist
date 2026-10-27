@@ -143,6 +143,8 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
 .row2b { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
 .keys { margin: 10px 0 0; font-size: 10px; line-height: 1.5; color: #7d828c; text-align: center; }
 .rb.music { width: 100%; margin-top: 8px; font-size: 11px; }
+.signin { display: block; margin-top: 6px; font-weight: 600; color: #9be37d; text-decoration: none; }   /* to the private copy with the music */
+.signin:hover { text-decoration: underline; }
 .vol { display: flex; align-items: center; gap: 7px; margin-top: 9px; }
 .vol svg { width: 14px; height: 14px; flex: none; fill: currentColor; }
 .vol input { flex: 1; min-width: 0; margin: 0; accent-color: #9be37d; cursor: pointer; }
@@ -294,6 +296,7 @@ html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
   <button type="button" class="rb music" id="musicBtn">Play my music…</button>
   <input type="file" id="musicPick" webkitdirectory multiple hidden>
   <p class="keys" id="musicMsg">Pick your music folder to hear the songs. Files stay on this computer.</p>
+  <a class="keys signin" id="signIn" href="https://gt-music-private.pages.dev/login">Friends: sign in ›</a>
   <p class="keys">Arrows · Enter<br>Space pause · F fast-fwd<br>PgUp / PgDn skip · M menu<br>S favourite · I car info<br>− / + volume<br>C retro TV · L music</p>
 </div>
 
@@ -612,7 +615,7 @@ const camera = new THREE.PerspectiveCamera(28, FRAME_ASPECT, 0.1, 200);
 const frame = document.getElementById('frame'), remote = document.getElementById('remote');
 function layout() {
   const w = window.innerWidth, h = window.innerHeight;
-  const RW = 150, RH = 505, GAP = 16;
+  const RW = 150, RH = 526, GAP = 16;
   let boxW = Math.min(w, h * FRAME_ASPECT);
   const fitBeside = Math.min(boxW, w - 2 * (RW + 2 * GAP));       // shrink the picture a little to make room for the remote
   let x0, y0, rx = null, ry = null;
@@ -791,6 +794,28 @@ function syncAudio() {                             // follow the player: play, p
   else if (!run && !audio.paused) audio.pause();
 }
 audio.addEventListener('ended', () => { if (st.mode !== 'arrive') songEnded(); });
+// tabbed out, the animation loop stops: the song's clock, the points and the end fade follow the audio instead
+audio.addEventListener('timeupdate', () => {
+  if (!document.hidden || st.mode === 'arrive' || audio.paused) return;
+  const was = st.pos;
+  st.pos = audio.currentTime;
+  if (st.pos > was && st.pos - was < 5) addPoints(st.pos - was);
+  const left = SONGS[st.cur].length - st.pos;
+  audio.volume = gain() * (left < END_FADE_S ? Math.max(0, left / END_FADE_S) ** 2 : 1);
+});
+// the system's media controls (Windows' media overlay, a phone's lock screen): the song, play / pause, next, previous
+function showMedia() {
+  if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
+  const s = SONGS[st.cur];
+  navigator.mediaSession.metadata = new MediaMetadata({ title: s.title, artist: s.artist, album: `Gran Turismo · ${s.game}` });
+}
+if ('mediaSession' in navigator) {
+  const on = (action, fn) => { try { navigator.mediaSession.setActionHandler(action, fn); } catch {} };
+  on('play', () => { if (!st.playing) press('pause'); });
+  on('pause', () => { if (st.playing) press('pause'); });
+  on('nexttrack', () => press('next'));
+  on('previoustrack', () => press('prev'));
+}
 // on the local preview server (out/scripts/serve_preview.py) the songs play straight from the music folder
 // (and in the standalone copy, "GT Music Player", the music folder sits next to the page)
 const LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
@@ -830,13 +855,23 @@ function goTo(k, remember = true) {
   refresh();
   const want = k;
   loadCar(SONGS[k].car).then((obj) => {
-    if (st.cur !== want || st.mode !== 'arrive') return;
+    if (st.cur !== want || turntable.children.length) return;
     turntable.add(obj.parent === leaving ? obj.clone() : obj);   // same car twice in a row: a copy comes in
     contact.visible = true;
-    st.arriveStart = performance.now();
+    if (st.mode === 'arrive') st.arriveStart = performance.now();   // (tabbed out, the song has started already)
   }).catch(() => {});                              // the message is shown by loadCar
+  if (document.hidden) finishArrival();
 }
-function songStarted() { st.mode = 'player'; st.yaw = HERO_YAW; st.pos = 0; startAudio(); refresh(); }
+// Tabbed out, the browser stops drawing the page, so a slide would never finish and the next song never start:
+// a song change then skips the slide, and one under way when the tab is left ends at once.
+function finishArrival() {
+  if (st.mode !== 'arrive') return;
+  leaving.clear(); contactOut.visible = false;
+  contact.visible = turntable.children.length > 0;
+  songStarted();
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) finishArrival(); });
+function songStarted() { st.mode = 'player'; st.yaw = HERO_YAW; st.pos = 0; startAudio(); refresh(); showMedia(); }
 function restartSong() { st.pos = 0; startAudio(); refresh(); }    // same song again
 function songEnded() {
   if (st.repeat) { restartSong(); return; }
@@ -1080,6 +1115,7 @@ window.addEventListener('keydown', (e) => {
 setRetro(!RENDER);
 if (!RENDER) $('bookLabel').textContent = 'Playlist';
 if (LOCAL) {
+  $('signIn').hidden = true;                       // the songs are here already (localhost, or the private copy)
   $('musicMsg').textContent = 'Songs play from your music folder. Click or press a key once to turn the sound on.';
   const unlock = () => { syncAudio(); window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock); };
   window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
